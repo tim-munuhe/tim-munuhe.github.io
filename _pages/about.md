@@ -10,7 +10,3 @@ Timothy W. Munuhe, Ph.D.
 - Free-Surface Flow
 - Heat Transfer
 - Multi-physics Modeling
-
-### Screenshot
-
-![Screenshot](screenshot.png)
