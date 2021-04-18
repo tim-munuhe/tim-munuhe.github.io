@@ -1,7 +1,6 @@
 # Sidey
 
-Sidey is a simple and minimalistic jekyll blogging theme.
-
+Timothy Munuhe: Scientific Computing, Porous Fluid Flow, Free-surface Flow, Heat Transfer, Multiphysics Modeling
 ### Features
 
 - Responsive design
