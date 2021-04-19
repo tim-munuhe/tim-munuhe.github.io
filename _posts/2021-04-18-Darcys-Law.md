@@ -1,4 +1,5 @@
 ---
+{::options parse_block_html="true" /}
 layout: post
 title: Basic Python w/ Darcy's Law
 description: Let's begin our Python journey by calculating porous fluid flow.
