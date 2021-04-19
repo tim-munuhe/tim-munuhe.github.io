@@ -1,8 +1,3 @@
--   [Writing](/)
--   [About](/about)
--   [Search](/search)
--   [Rss](/atom.xml)
-
 Basic Python with Darcy's Law
 -----------------------------
 
