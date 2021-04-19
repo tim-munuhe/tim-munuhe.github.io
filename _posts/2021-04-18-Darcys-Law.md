@@ -3,15 +3,17 @@ layout: post
 title: Basic Python w/ Darcy's Law
 description: Let's begin our Python journey by calculating porous fluid flow.
 summary: Solving Darcy's Law simply and through a class object.
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script>
 ---
 
 Darcy\'s law is an equation used to calculate fluid flow through a porous medium under a pressure gradient. It's also a useful test problem to explore scientific computing with Python from a basic to intermediate level. 
 
 Darcy\'s Law can be written as:
 
-<!---\[
+$$
 \vec{u} = -\frac{K}{\mu} \nabla P 
-\]--->
+$$
 
 where $$\vec{u}$$ is the superficial flow velocity, $$K$$ is the hydraulic permeability of the porous medium, $$\mu$$ is the viscosity of the liquid, and $$P$$ is the pressure distribution. All three variables can vary over space. If the problem considered is 2D or 3D, then Darcy\'s Law becomes a partial differential equation (PDE).
 
