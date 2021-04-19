@@ -3,8 +3,8 @@ layout: post
 title: Basic Python w/ Darcy's Law
 description: Let's begin our Python journey by calculating porous fluid flow.
 summary: Solving Darcy's Law simply and through a class object.
-
 ---
+
 Darcy\'s law is an equation used to calculate fluid flow through a porous medium under a pressure gradient. It's also a useful test problem to explore scientific computing with Python from a basic to intermediate level. 
 
 Darcy\'s Law can be written as:
@@ -24,7 +24,7 @@ Let\'s say we have a pipe filled with sand. A fluid can flow in the spaces betwe
 Basically, the porous medium and fluid flow properties are constant. Let\'s also assume that the pipe is long enough relative to its diameter that we can assume that pressure only varies significantly along its axis. Then, we can treat this as a 1D problem:
 
 $$
-u = -\frac{K}{\mu} \dfrac{dP}{dx}
+u = -\dfrac{K}{\mu} \dfrac{dP}{dx}
 $$
 
 So now we have an ordinary differential equation, or ODE. To complete the description of the problem we need 2 boundary conditions. Let\'s give two boundary conditions:
