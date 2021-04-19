@@ -9,9 +9,9 @@ Darcy\'s law is an equation used to calculate fluid flow through a porous medium
 
 Darcy\'s Law can be written as:
 
-$$
+\[
 \vec{u} = -\frac{K}{\mu} \nabla P 
-$$
+\]
 
 where $$\vec{u}$$ is the superficial flow velocity, $$K$$ is the hydraulic permeability of the porous medium, $$\mu$$ is the viscosity of the liquid, and $$P$$ is the pressure distribution. All three variables can vary over space. If the problem considered is 2D or 3D, then Darcy\'s Law becomes a partial differential equation (PDE).
 
