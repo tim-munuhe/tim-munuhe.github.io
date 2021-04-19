@@ -28,8 +28,6 @@
 
 <meta name="twitter:site" content="@">
 
-<script type="application/ld+json"> {"description":"This is a collection of short CSS snippets I thought might be useful for beginners","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2014/05/12/css-hacks-you-may-not-know"},"@type":"BlogPosting","url":"http://localhost:4000/2014/05/12/css-hacks-you-may-not-know","headline":"Basic Python w/ Darcy's Law","dateModified":"2014-05-12T00:00:00+03:00","datePublished":"2014-05-12T00:00:00+03:00","@context":"https://schema.org"} </script>
-
 <title> Basic Python w/ Darcy's Law </title>
 
 <link rel="shortcut icon" href="/favicon.png">
