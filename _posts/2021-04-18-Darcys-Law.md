@@ -3,9 +3,6 @@ layout: post
 title: Basic Python w/ Darcy's Law
 description: Let's begin our Python journey by calculating porous fluid flow.
 summary: Solving Darcy's Law simply and through a class object.
-{::options parse_block_html="true" /}
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 ---
 Darcy\'s law is an equation used to calculate fluid flow through a porous medium under a pressure gradient. It's also a useful test problem to explore scientific computing with Python from a basic to intermediate level. 
 
