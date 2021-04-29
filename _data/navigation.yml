@@ -1,8 +1,8 @@
 links:
 - title: Posts
-  url: /posts
-- title: About
   url: /
+- title: About
+  url: /about
 - title: Search
   url: /search
 - title: Rss
