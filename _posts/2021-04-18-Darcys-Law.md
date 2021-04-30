@@ -1,70 +1,65 @@
 ---
 layout: post
-title: Basic Python w/ Darcy's Law
+title: Basic Python with Darcy's Law
 description: Let's begin our Python journey by calculating porous fluid flow.
 summary: Solving Darcy's Law simply and through a class object.
+mathjax: true
 ---
+
 Darcy\'s law is an equation used to calculate fluid flow through a porous medium under a pressure gradient. It's also a useful test problem to explore scientific computing with Python from a basic to intermediate level. 
 
 Darcy\'s Law can be written as:
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?\vec{u}&space;=&space;-\frac{K}{\mu}\nabla&space;P"/>
+</p>
 
-$$
-\vec{u} = -\frac{K}{\mu} \nabla P 
-$$
-
-where $$\vec{u}$$ is the superficial flow velocity, $$K$$ is the hydraulic permeability of the porous medium, $$\mu$$ is the viscosity of the liquid, and $$P$$ is the pressure distribution. All three variables can vary over space. If the problem considered is 2D or 3D, then Darcy\'s Law becomes a partial differential equation (PDE).
+where ![vel](https://latex.codecogs.com/svg.image?\vec{u}) is the superficial flow velocity, ![perm](https://latex.codecogs.com/svg.image?K) is the hydraulic permeability of the porous medium, ![visc](https://latex.codecogs.com/svg.image?\mu) is the viscosity of the liquid, and ![pres](https://latex.codecogs.com/svg.image?P) is the pressure distribution. All three variables can vary over space. If the problem considered is 2D or 3D, then Darcy\'s Law becomes a partial differential equation (PDE).
 
 PDEs represent a myriad of phenomena mathematically, including heat transfer, electro-magnetism and the price of European options. You can find better discussions elsewhere but some prototypical equations to learn about are Laplace's equation, Poisson's equation, the Heat equation, and the Wave equation.
 
 <h3>Problem Setup</h3>
 
-Let\'s say we have a pipe filled with sand. A fluid can flow in the spaces between the individual grains of sand, termed the pores. Depending on how big or small or well-packed the sand grains are, it\'s easier or harder for the fluid to flow through the pipe. This is represented by $$K$$. The fluid\'s viscosity also affects how easily it can flow through the pores (maple syrup? or water? or air?).
+Let\'s say we have a pipe filled with sand. A fluid can flow in the spaces between the individual grains of sand, termed the pores. Depending on how big or small or well-packed the sand grains are, it\'s easier or harder for the fluid to flow through the pipe. This is represented by ![perm](https://latex.codecogs.com/svg.image?K). The fluid\'s viscosity also affects how easily it can flow through the pores (maple syrup? or water? or air?).
 
 Basically, the porous medium and fluid flow properties are constant. Let\'s also assume that the pipe is long enough relative to its diameter that we can assume that pressure only varies significantly along its axis. Then, we can treat this as a 1D problem:
 
-$$
-u = -\frac{K}{\mu} \dfrac{dP}{dx}
-$$
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?u&space;=&space;-\dfrac{K}{\mu}\dfrac{dP}{dx}"/>
+</p>
 
 So now we have an ordinary differential equation, or ODE. To complete the description of the problem we need 2 boundary conditions. Let\'s give two boundary conditions:
 
-$$
-P(x=0) = P_0
-$$
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?P(x=0)&space;=&space;P_0"/>
+</p>
 
-$$
-P(x=L) = P_L
-$$
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?P(x=L)&space;=&space;P_L"/>
+</p>
+
+
 
 Let\'s give some properties so we can move on:
-<center>
-<table class="center">
-<tr>
-<td>K</td>
-<td> 10<sup>-9</sup> m<sup>2</sup>/s</td>
-</tr>
-<tr>
-<td>μ</td>
-<td> 0.001 Pa*s</td>
-</tr>
-<tr>
-<td>P<sub>0</sub></td>
-<td>0 Pa</td>
-</tr>
-<tr>
-<td>P<sub>L</sub></td>
-<td>-100 Pa</td>
-</tr>
-<tr>
-<td>L</td>
-<td>1 m</td>
-</tr>
-</table>
-</center>
+
+Property | Value
+:-: | :-: 
+![perm](https://latex.codecogs.com/svg.image?K) | ![Kval](https://latex.codecogs.com/svg.image?10^{-9}\;\frac{m^2}{s})
+![visc](https://latex.codecogs.com/svg.image?\mu) | ![Kval](https://latex.codecogs.com/svg.image?0.001\;Pa\cdot&space;s)
+![perm](https://latex.codecogs.com/svg.image?P_0) | ![Kval](https://latex.codecogs.com/svg.image?0\;Pa)
+![perm](https://latex.codecogs.com/svg.image?P_L) | ![Kval](https://latex.codecogs.com/svg.image?-100\;Pa)
+![perm](https://latex.codecogs.com/svg.image?L) | ![Kval](https://latex.codecogs.com/svg.image?1\;m)
+
+
 
 <h3>Enough Physics. Let's Code!</h3>
 
-With our current assumptions, the superficial velocity at every point within the pipe is: \[u = -\dfrac{K}{\mu} \dfrac{P_L - P_0}{L} \] Then we can solve it quite easily with:
+With our current assumptions, the superficial velocity at every point within the pipe is: 
+
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?u=-\dfrac{K}{\mu}\dfrac{P_L-P_0}{L}"/>
+</p> 
+
+Then we can solve it quite easily with:
 
 <pre><code class="language-python"> K = 1.0E-9 # permeability <br> mu = 0.001 # viscosity <br> P_0 = 0.0 # inlet <br> P_L = -100.0 #outlet <br> L = 1.0 # pipe length <br> u = -K/mu*(P_L-P_0)/L <br> print(u) <br> >>> 9.999999999999999e-05  </code> </pre>
 

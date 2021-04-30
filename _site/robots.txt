@@ -1,2 +1,2 @@
 User-agent: *
-Sitemap: tim-munuh.github.io/sitemap.xml
+Sitemap: tim-munuhe.github.io/sitemap.xml

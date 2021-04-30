@@ -1,10 +1,11 @@
-I"=<p>Darcy's law is an equation used to calculate fluid flow through a porous medium under a pressure gradient. It’s also a useful test problem to explore scientific computing with Python from a basic to intermediate level.</p>
+I"�<p>Darcy's law is an equation used to calculate fluid flow through a porous medium under a pressure gradient. It’s also a useful test problem to explore scientific computing with Python from a basic to intermediate level.</p>
 
 <p>Darcy's Law can be written as:</p>
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?\vec{u}&space;=&space;-\frac{K}{\mu}\nabla&space;P" />
+</p>
 
-\[\vec{u} = -\frac{K}{\mu} \nabla P\]
-
-<p>where \(\vec{u}\) is the superficial flow velocity, \(K\) is the hydraulic permeability of the porous medium, \(\mu\) is the viscosity of the liquid, and \(P\) is the pressure distribution. All three variables can vary over space. If the problem considered is 2D or 3D, then Darcy's Law becomes a partial differential equation (PDE).</p>
+<p>where <img src="https://latex.codecogs.com/svg.image?\vec{u}" alt="vel" /> is the superficial flow velocity, <img src="https://latex.codecogs.com/svg.image?K" alt="perm" /> is the hydraulic permeability of the porous medium, <img src="https://latex.codecogs.com/svg.image?\mu" alt="visc" /> is the viscosity of the liquid, and \(P\) is the pressure distribution. All three variables can vary over space. If the problem considered is 2D or 3D, then Darcy's Law becomes a partial differential equation (PDE).</p>
 
 <p>PDEs represent a myriad of phenomena mathematically, including heat transfer, electro-magnetism and the price of European options. You can find better discussions elsewhere but some prototypical equations to learn about are Laplace’s equation, Poisson’s equation, the Heat equation, and the Wave equation.</p>
 
@@ -14,13 +15,19 @@
 
 <p>Basically, the porous medium and fluid flow properties are constant. Let's also assume that the pipe is long enough relative to its diameter that we can assume that pressure only varies significantly along its axis. Then, we can treat this as a 1D problem:</p>
 
-\[u = -\frac{K}{\mu} \dfrac{dP}{dx}\]
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?u&space;=&space;-\dfrac{K}{\mu}\dfrac{dP}{dx}" />
+</p>
 
 <p>So now we have an ordinary differential equation, or ODE. To complete the description of the problem we need 2 boundary conditions. Let's give two boundary conditions:</p>
 
-\[P(x=0) = P_0\]
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?P(x=0)&space;=&space;P_0" />
+</p>
 
-\[P(x=L) = P_L\]
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?P(x=L)&space;=&space;P_L" />
+</p>
 
 <p>Let's give some properties so we can move on:</p>
 <center>
@@ -47,6 +54,37 @@
 </tr>
 </table>
 </center>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Property</th>
+      <th style="text-align: center">Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center"><img src="https://latex.codecogs.com/svg.image?K" alt="perm" /></td>
+      <td style="text-align: center"><img src="https://latex.codecogs.com/svg.image?10^{-9}\;\frac{m^2}{s}" alt="Kval" /></td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><img src="https://latex.codecogs.com/svg.image?\mu" alt="visc" /></td>
+      <td style="text-align: center"><img src="https://latex.codecogs.com/svg.image?0.001\;Pa\cdot&space;s" alt="Kval" /></td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><img src="https://latex.codecogs.com/svg.image?P_0" alt="perm" /></td>
+      <td style="text-align: center"><img src="https://latex.codecogs.com/svg.image?0\;Pa" alt="Kval" /></td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><img src="https://latex.codecogs.com/svg.image?P_L" alt="perm" /></td>
+      <td style="text-align: center"><img src="https://latex.codecogs.com/svg.image?-100\;Pa" alt="Kval" /></td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><img src="https://latex.codecogs.com/svg.image?L" alt="perm" /></td>
+      <td style="text-align: center"><img src="https://latex.codecogs.com/svg.image?1\;m" alt="Kval" /></td>
+    </tr>
+  </tbody>
+</table>
 
 <h3>Enough Physics. Let's Code!</h3>
 

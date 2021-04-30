@@ -2,16 +2,18 @@ site: tim-munuhe
 url: tim-munuhe.github.io
 title: tim-munuhe
 description:
+markdown: kramdown
+
 twitter:
-  username: #yourusername
+  username: "tim_munuhe"
   card: summary
-  creator: #yourusername
+  creator: "tim_munuhe"
 author:
-  twitter: #yourusername
-  name: #yourusername
+  twitter: "tim_munuhe"
+  name: "Timothy W. Munuhe, Ph.D."
   avatar:
-  email: #youremail
-  url: #yoururl
+  email: "timothy.munuhe@gmail.com"
+  url: "tim-munuhe.gitub.io"
 permalink: pretty
 
 baseurl: ""
