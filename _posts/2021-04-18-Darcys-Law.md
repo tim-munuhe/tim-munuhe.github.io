@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Basic Python with Darcy's Law
+title: Basic Python with Darcy's Law - Introduction
 description: Let's begin our Python journey by calculating porous fluid flow.
 summary: Solving Darcy's Law simply and through a class object.
 mathjax: true

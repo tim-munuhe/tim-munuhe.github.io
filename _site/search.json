@@ -2,7 +2,18 @@
   
     {
 
-      "title"    : "Basic Python with Darcy&#39;s Law",
+      "title"    : "Basic Python with Darcy&#39;s Law - User-Defined Parameters",
+      "url"      : "/2021/05/01/csv-read-parameters",
+      "category" : "",
+      "tags"     : "",
+      "date"     : "2021-05-01 00:00:00 -0400",
+      "description" : "Read parameters for Darcy&#39;s Law from a CSV file."
+
+    } ,
+  
+    {
+
+      "title"    : "Basic Python with Darcy&#39;s Law - Introduction",
       "url"      : "/2021/04/18/darcys-law",
       "category" : "",
       "tags"     : "",

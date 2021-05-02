@@ -4,7 +4,7 @@
  <title>tim-munuhe</title>
  <link href="tim-munuhe.github.io/atom.xml" rel="self"/>
  <link href="tim-munuhe.github.io/"/>
- <updated>2021-04-29T23:31:34-04:00</updated>
+ <updated>2021-05-01T23:53:23-04:00</updated>
  <id>tim-munuhe.github.io</id>
  <author>
    <name>Timothy W. Munuhe, Ph.D.</name>
@@ -13,7 +13,129 @@
 
  
  <entry>
-   <title>Basic Python with Darcy's Law</title>
+   <title>Basic Python with Darcy's Law - User-Defined Parameters</title>
+   <link href="tim-munuhe.github.io/2021/05/01/csv-read-parameters"/>
+   <updated>2021-05-01T00:00:00-04:00</updated>
+   <id>tim-munuhe.github.io/2021/05/01/CSV-Read-Parameters</id>
+   <content type="html">&lt;p&gt;In the previous blog post, I introduced some object-oriented Python by creating a parameter class that initialized a solution to Darcy's law for some default fluid and porous medium. So, just by creating the case, we were done. Now, we want to feed our own properties into Darcy's Law.&lt;/p&gt;
+
+&lt;p&gt;Let's start with the (easier) parameter problem: we can feed in our own fluid and porous medium properties by adding to the instantiation’s input. Currently, we just have &lt;code class=&quot;language-python&quot;&gt;(self)&lt;/code&gt; for the initialization. Let's add the length of the porous medium:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;class case_param(): &lt;br /&gt;    def __init__(self,L): &lt;br /&gt;        self.dim = 1 # dimensions &lt;br /&gt;        self.x0 = 0.0 # inlet position &lt;br /&gt;        self.xL = self.x0 + L # outlet &lt;br /&gt;        fluid_name = 'Water' &lt;br /&gt;        mu = 0.001 &lt;br /&gt;        u0 = 0.0 &lt;br /&gt;        p0 = 0.0 # inlet pressure &lt;br /&gt;        pL = -100.0 # outlet &lt;br /&gt;        self.fl = {'Name': fluid_name, 'mu': mu, 'u0': u0, 'p0': p0, 'pL': pL} &lt;br /&gt;        pm_name = 'Sand' &lt;br /&gt;        K = 1.0E-9 &lt;br /&gt;        eps = 0.15 &lt;br /&gt;        self.pm = {'Name': pm_name, 'K':K, 'eps':eps} &amp;gt;br&amp;gt;         self.fl['u0'] = -K/mu*(pL-p0)/(self.xL-self.x0) &lt;/code&gt; &lt;/pre&gt;
+
+&lt;p&gt;When we create the &lt;code class=&quot;language-python&quot;&gt;case_param&lt;/code&gt; object, we need to give the length in the parentheses, like so:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;base = case_param(1.0)&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Then, when we call the case's outlet location, we get our length:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(base.xL) &lt;br /&gt;&amp;gt;&amp;gt;&amp;gt; 9.999999999999999e-05  &lt;/code&gt; &lt;/pre&gt;
+
+&lt;p&gt;which gives us the same answer as the first blog post:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;print(base.fl['u0']) &lt;br /&gt; &amp;gt;&amp;gt;&amp;gt; 9.999999999999999e-05  &lt;/code&gt; &lt;/pre&gt;
+
+&lt;p&gt;We could keep going this way but we have at least 8 parameters for our case that we'd want to vary: the fluid name, viscosity, inlet and outlet pressure, porous medium name, permeability, porosity, and the length of the domain. Instead, we can use text files or CSV files with specified formats to feed in the case parameters, allowing a more streamlined multi-case process. Let's use CSV: we can create it in Excel and it’s use in Python for Data Science means there will be resources for troublshooting later (;-)).&lt;/p&gt;
+
+&lt;p&gt;First, import the &lt;code class=&quot;language-python&quot;&gt;CSV&lt;/code&gt; package:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;import csv  &lt;/code&gt; &lt;/pre&gt;
+
+&lt;p&gt;Next, let’s create our CSV case file using Excel:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;case_name&lt;/th&gt;
+      &lt;th&gt;fluid&lt;/th&gt;
+      &lt;th&gt;p0&lt;/th&gt;
+      &lt;th&gt;pL&lt;/th&gt;
+      &lt;th&gt;mu&lt;/th&gt;
+      &lt;th&gt;porous_medium&lt;/th&gt;
+      &lt;th&gt;length&lt;/th&gt;
+      &lt;th&gt;K&lt;/th&gt;
+      &lt;th&gt;eps&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;base&lt;/td&gt;
+      &lt;td&gt;water&lt;/td&gt;
+      &lt;td&gt;0.000&lt;/td&gt;
+      &lt;td&gt;-100.000&lt;/td&gt;
+      &lt;td&gt;0.001&lt;/td&gt;
+      &lt;td&gt;sand&lt;/td&gt;
+      &lt;td&gt;1.000&lt;/td&gt;
+      &lt;td&gt;1.00E-09&lt;/td&gt;
+      &lt;td&gt;0.150&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;long&lt;/td&gt;
+      &lt;td&gt;water&lt;/td&gt;
+      &lt;td&gt;0.000&lt;/td&gt;
+      &lt;td&gt;-100.000&lt;/td&gt;
+      &lt;td&gt;0.001&lt;/td&gt;
+      &lt;td&gt;sand&lt;/td&gt;
+      &lt;td&gt;2.000&lt;/td&gt;
+      &lt;td&gt;1.00E-09&lt;/td&gt;
+      &lt;td&gt;0.150&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;press&lt;/td&gt;
+      &lt;td&gt;water&lt;/td&gt;
+      &lt;td&gt;100.000&lt;/td&gt;
+      &lt;td&gt;-100.000&lt;/td&gt;
+      &lt;td&gt;0.001&lt;/td&gt;
+      &lt;td&gt;sand&lt;/td&gt;
+      &lt;td&gt;1.000&lt;/td&gt;
+      &lt;td&gt;1.00E-09&lt;/td&gt;
+      &lt;td&gt;0.150&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;powder&lt;/td&gt;
+      &lt;td&gt;water&lt;/td&gt;
+      &lt;td&gt;0.000&lt;/td&gt;
+      &lt;td&gt;-100.000&lt;/td&gt;
+      &lt;td&gt;0.001&lt;/td&gt;
+      &lt;td&gt;powder&lt;/td&gt;
+      &lt;td&gt;1.000&lt;/td&gt;
+      &lt;td&gt;1.00E-11&lt;/td&gt;
+      &lt;td&gt;0.300&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;oil&lt;/td&gt;
+      &lt;td&gt;oil&lt;/td&gt;
+      &lt;td&gt;0.000&lt;/td&gt;
+      &lt;td&gt;-100.000&lt;/td&gt;
+      &lt;td&gt;0.060&lt;/td&gt;
+      &lt;td&gt;sane&lt;/td&gt;
+      &lt;td&gt;1.000&lt;/td&gt;
+      &lt;td&gt;1.00E-09&lt;/td&gt;
+      &lt;td&gt;0.150&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;We can use the &lt;code class=&quot;language-python&quot;&gt;csv.reader&lt;/code&gt; function and skip the first line to create individual case parameter lists, or, we can use the &lt;code class=&quot;language-python&quot;&gt;csv.DictReader&lt;/code&gt; function to construct individual case dictionaries:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;with open('casefile.csv',newline='') as casefile: &lt;br /&gt;    casereader = csv.DictReader(casefile) &lt;br /&gt;    i = 0 &lt;br /&gt;    caselist = {} &lt;br /&gt;    for row in casereader:    &lt;br /&gt;        caselist[i] = row &lt;br /&gt;        print(row['case_name'], row['fluid'], row['mu']) # check that code works as expected &lt;br /&gt;        i += 1 &lt;br /&gt;&amp;gt;&amp;gt;&amp;gt; base water 0.001 &lt;br /&gt;&amp;gt;&amp;gt;&amp;gt; long water 0.001 &lt;br /&gt;&amp;gt;&amp;gt;&amp;gt; press water 0.001 &lt;br /&gt;&amp;gt;&amp;gt;&amp;gt; powder water 0.001 &lt;br /&gt;&amp;gt;&amp;gt;&amp;gt; oil oil 0.060 &lt;/code&gt; &lt;/pre&gt;
+
+&lt;p&gt;DictReader uses the first row of the CSV file as the keys and the subsequent row values are the dictionary entries. The only problem is that all entries are read as strings, which must convert the number variables to floats in the &amp;lt;pre&amp;gt;&lt;code class=&quot;language-python&quot;&gt;case_param&lt;/code&gt; &amp;lt;/pre&amp;gt; instantiation:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;class case_param(): &lt;br /&gt;    def __init__(self,param): &lt;br /&gt;        self.name = param['case_name'] # now the name is given inside the case, not as the case's actually name &lt;br /&gt;        self.dim = 1 # dimensions &lt;br /&gt;        self.x0 = 0.0 # inlet position &lt;br /&gt;        self.xL = self.x0 + float(param['length']) # outlet &lt;br /&gt;        fluid_name = param['fluid'] &lt;br /&gt;        mu = float(param['mu']) &lt;br /&gt;        u0 = 0.0 &lt;br /&gt;        p0 = float(param['p0']) # inlet pressure &lt;br /&gt;        pL = float(param['pL']) # outlet &lt;br /&gt;        self.fl = {'Name': fluid_name, 'mu': mu, 'u0': u0, 'p0': p0, 'pL': pL} &lt;br /&gt;        pm_name = param['porous_medium']  &lt;br /&gt;        K = float(param['K']) &lt;br /&gt;        eps = float(param['eps']) &lt;br /&gt;        self.pm = {'Name': pm_name, 'K':K, 'eps':eps} &lt;br /&gt;         self.fl['u0'] = -K/mu*(pL-p0)/(self.xL-self.x0) &lt;/code&gt; &lt;/pre&gt;
+
+&lt;p&gt;We can initialize the original base case and the oil case and compare the velocities:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt; base = case_param(caselist[0]) &lt;br /&gt; oil = case_param(caselist[4]) &lt;br /&gt; print(base.fl['u0'] &lt;br /&gt; &amp;gt;&amp;gt;&amp;gt; 9.999999999999999e-05 &lt;br /&gt; print(oil.fl['u0'] &lt;br /&gt; &amp;gt;&amp;gt;&amp;gt; 1.6666666666666667e-06 &lt;/code&gt; &lt;/pre&gt;
+
+&lt;p&gt;We can see that the viscous oil slows down the flow, as expected. We haven’t changed the Darcy's Law calculation so we know, at least, that the code is reading the CSV file correctly and initializing the case properly.&lt;/p&gt;
+
+&lt;p&gt;The next step is to see what is going on between the inlet and outlet, specifically with the pressure.&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Basic Python with Darcy's Law - Introduction</title>
    <link href="tim-munuhe.github.io/2021/04/18/darcys-law"/>
    <updated>2021-04-18T00:00:00-04:00</updated>
    <id>tim-munuhe.github.io/2021/04/18/Darcys-Law</id>

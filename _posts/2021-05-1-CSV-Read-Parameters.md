@@ -8,17 +8,17 @@ mathjax: true
 
 In the previous blog post, I introduced some object-oriented Python by creating a parameter class that initialized a solution to Darcy\'s law for some default fluid and porous medium. So, just by creating the case, we were done. Now, we want to feed our own properties into Darcy\'s Law. 
 
-Let\'s start with the (easier) parameter problem: we can feed in our own fluid and porous medium properties by adding to the instantiation's input. Currently, we just have (self) for the initialization. Let\'s add the length of the porous medium:
+Let\'s start with the (easier) parameter problem: we can feed in our own fluid and porous medium properties by adding to the instantiation's input. Currently, we just have <code class="language-python">(self)</code> for the initialization. Let\'s add the length of the porous medium:
 
 <pre><code class="language-python">class case_param(): <br>    def __init__(self,L): <br>        self.dim = 1 # dimensions <br>        self.x0 = 0.0 # inlet position <br>        self.xL = self.x0 + L # outlet <br>        fluid_name = 'Water' <br>        mu = 0.001 <br>        u0 = 0.0 <br>        p0 = 0.0 # inlet pressure <br>        pL = -100.0 # outlet <br>        self.fl = {'Name': fluid_name, 'mu': mu, 'u0': u0, 'p0': p0, 'pL': pL} <br>        pm_name = 'Sand' <br>        K = 1.0E-9 <br>        eps = 0.15 <br>        self.pm = {'Name': pm_name, 'K':K, 'eps':eps} >br>         self.fl['u0'] = -K/mu*(pL-p0)/(self.xL-self.x0) </code> </pre>
 
-When we create the case_param object, we need to give the length in the parentheses, like so:
+When we create the <code class="language-python">case_param</code> object, we need to give the length in the parentheses, like so:
 
-<pre><code class="language-python">base = case_param(1.0)
+<pre><code class="language-python">base = case_param(1.0)</code></pre>
 
 Then, when we call the case\'s outlet location, we get our length:
 
-<pre><code class="language-python">print(base.xL) <br> >>> 9.999999999999999e-05  </code> </pre>
+<pre><code class="language-python">print(base.xL) <br>>>> 9.999999999999999e-05  </code> </pre>
 
 which gives us the same answer as the first blog post:
 
@@ -26,9 +26,9 @@ which gives us the same answer as the first blog post:
 
 We could keep going this way but we have at least 8 parameters for our case that we\'d want to vary: the fluid name, viscosity, inlet and outlet pressure, porous medium name, permeability, porosity, and the length of the domain. Instead, we can use text files or CSV files with specified formats to feed in the case parameters, allowing a more streamlined multi-case process. Let\'s use CSV: we can create it in Excel and it's use in Python for Data Science means there will be resources for troublshooting later (;-)). 
 
-First, import the CSV package:
+First, import the <code class="language-python">CSV</code> package:
 
-<pre><code class="language-python">print(base.fl['u0']) <br> >>> 9.999999999999999e-05  </code> </pre>
+<pre><code class="language-python">import csv  </code> </pre>
 
 Next, let's create our CSV case file using Excel:
 
@@ -40,9 +40,9 @@ Next, let's create our CSV case file using Excel:
 | powder     | water | 0.000   | \-100.000 | 0.001 | powder         | 1.000  | 1.00E-11 | 0.300 |
 | oil        | oil   | 0.000   | \-100.000 | 0.060 | sane           | 1.000  | 1.00E-09 | 0.150 |
 
-We can use the csv.reader function and skip the first line to create individual case parameter lists, or, we can use the csv.DictReader function to construct individual case dictionaries:
+We can use the <code class="language-python">csv.reader</code> function and skip the first line to create individual case parameter lists, or, we can use the <code class="language-python">csv.DictReader</code> function to construct individual case dictionaries:
 
-<pre><code class="language-python">with open('casefile.csv',newline='') as casefile: <br>    casereader = csv.DictReader(casefile) <br>    i = 0 <br>    caselist = {} <br>    for row in casereader:    <br>        caselist[i] = row <br>        print(row['case_name'], row['fluid'], row['mu']) # check that code works as expected <br>        i += 1 <br> >>> base water 0.001 <br> >>> long water 0.001 <br> >>> press water 0.001 <br> >>> powder water 0.001 <br> >>> oil oil 0.060 </code> </pre>
+<pre><code class="language-python">with open('casefile.csv',newline='') as casefile: <br>    casereader = csv.DictReader(casefile) <br>    i = 0 <br>    caselist = {} <br>    for row in casereader:    <br>        caselist[i] = row <br>        print(row['case_name'], row['fluid'], row['mu']) # check that code works as expected <br>        i += 1 <br>>>> base water 0.001 <br>>>> long water 0.001 <br>>>> press water 0.001 <br>>>> powder water 0.001 <br>>>> oil oil 0.060 </code> </pre>
 
 DictReader uses the first row of the CSV file as the keys and the subsequent row values are the dictionary entries. The only problem is that all entries are read as strings, which must convert the number variables to floats in the <pre><code class="language-python">case_param</code> </pre> instantiation:
 
