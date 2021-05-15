@@ -184,6 +184,6 @@ def plot_out(data): # plotting function, takes in data object of specific form a
 plot_out(data_sol) # call the plotting output
 ```
 
-![Multi-plot of the face data.](/tim-munuhe.github.io/assets/images/node_data_sol.png "Pressure, permeability, and viscosity vs. x.")
+![Multi-plot of the face data.](tim-munuhe.github.io/assets/images/node_data_sol.png "Pressure, permeability, and viscosity vs. x.")
 
 Now that we can output text and figures to check our results, we can use more sophisticated numerical methods to get solutions to more complicated problem while debugging more efficiently.
