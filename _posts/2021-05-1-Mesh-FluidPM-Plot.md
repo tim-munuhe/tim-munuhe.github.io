@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Basic Python with Darcy's Law - UsMeshing, Basic Spatial Solutions, and Plotting Output
+title: Basic Python with Darcy's Law - Meshing, Basic Spatial Solutions, and Plotting Output
 description: Form the mesh objects, calculate a basic solution over the mesh, and plot the output.
 summary: Solving Darcy\'s law over a mesh that we create and plotting the solution.
 mathjax: true
@@ -12,11 +12,11 @@ More classes and objects can get unwieldy, so let\'s develop a sketch of how the
 
 Simple, right? Remember, one step at a time.
 
-## The Mesh
+### The Mesh
 
 The mesh can represent a 1D, 2D, or 3D space. Assume we have a cylindrical pipe filled with sand and water. Depending on its width, diameter, and how homogeneous the sand is, we might want to consider it in 3D or 2D. If we also assume the pipe is very long relative to its diameter, we can simplify the problem to 1D. A 1D mesh is essentially a line with points along it while the 2D and 3D spaces can be divided into a variety of 2D and 3D shapes (squares and cubes being particularly common). So, each element of the 1D mesh represents a slice of the pipe.
 
-I\'ll be using finite difference method for the majority of the blog posts. There\'s more math here than I care to dig into but I recommend reading Patankar & Spalding's 1972 paper titled "A Calculation Procedure for Heat, Mass, and Momentum Transfer". In short, from Darcy's Law, the pressure gradient is used to calculate the velocity. So, the velocity and pressure are more accurately considered at offset locations, or on a staggered mesh. That is, where you calculate the velocity is offset from where you calculate the pressures. So, you use the pressures at two adjacent cells to calculate the (volume-averaged) velocity at the face between those cells. You can do this to get the velocities at the interior faces. At the inlet and outlet, the inlet pressure and velocity are collocated which may affect the accuracy. That is not important for the current code but, for better-than-1st-order accuracy, we\'d need to derive a better approximation for the pressure gradients there. In any case, [CFD-Online has a pretty short article about the staggered grid issue](https://www.cfd-online.com/Wiki/Staggered_grid).
+I\'ll be using finite difference method for the majority of the blog posts. There\'s more math here than I care to dig into but I recommend reading Patankar & Spalding's 1972 paper titled "A Calculation Procedure for Heat, Mass, and Momentum Transfer". In short, from Darcy's Law, the pressure gradient is used to calculate the velocity. So, the velocity and pressure are more accurately considered at offset locations, for example on a staggered mesh. That is, where you calculate the velocity is offset from where you calculate the pressures. So, you use the pressures at two adjacent cells to calculate the (volume-averaged) velocity at the face between those cells. You can do this to get the velocities at the interior faces. At the inlet and outlet, the inlet pressure and velocity are collocated which may affect the accuracy. That is not important for the current code but, for better-than-1st-order accuracy, we\'d need to derive a better approximation for the pressure gradients there. In any case, [CFD-Online has a pretty short article about the staggered grid issue](https://www.cfd-online.com/Wiki/Staggered_grid).
 
 Back to the OOP: we create a mesh class where each mesh object has a name, shape, density, and specified node (x), interior face (xc), and boundary locations (also xc):
 
@@ -76,7 +76,7 @@ i	x	xc
 
 If you're using excel, you can output a csv file: go to the Data tab and do text-to-columns on all the rows with a tab delimiter to get it formatted. 
 
-## Applying Darcy\'s Law as a Method to a Fluid Object 
+### Applying Darcy\'s Law as a Method to a Fluid Object 
 
 Because the porous medium and fluid occupy the space of the mesh, they need to have some of the same properties as the mesh, namely the shape and spatial positions of the mesh. Then, the pressure at <code class="language-python">p[i]</code> is the pressure at the location <code class="language-python">x[i]</code>. Apart from the size and shape, the fluid and porous medium share a pressure and have their own properties as outlined in Darcy\'s Law. Both have their own names and volume fractions. The fluid will have a viscosity and velocity and the porous medium will have a permeability:
 
@@ -120,7 +120,7 @@ pm1 = por_med(base_mesh,base.pm) # porous medium object, determined by mesh and 
 
 With the fluid and porous medium objects created, we can find the pressures and flow velocities within the domain at the points specified by the mesh. While we can do something similar to the direct calculation in in the first blog post, let's create methods so that the functions are tied to the specific objects. This connects the equations to the specific parts of the problem more directly.
 
-Since the porous medium is homogeneous, we can assume that the pressure distribution in the porous medium is linear, with the boundary conditions in the case corresponding to the inlet and outlet pressures. Then, we can code a very simple pressure calculation method for the fluid below the instantiation, represented by the p_lin function in the fluid class above:
+Since the porous medium is homogeneous, we can assume that the pressure distribution in the porous medium is linear, with the boundary conditions in the case corresponding to the inlet and outlet pressures. Then, we can code a very simple pressure calculation method for the fluid below the instantiation, represented by the <code class="language-python">p_lin(mesh)</code> method in the fluid class above:
 
 ```
 print('Initial Pressure:',fl1.p[0:4])
@@ -143,7 +143,7 @@ print('Final Velocity:',fl1.u[0:4]) # print to confirm that darcyv did what it w
 
 The <code class="language-python">darcyv</code> method as it is coded looks complicated but it\'s pretty simple mathematically. The changes made from just applying Darcy\'s law from the previous post (-K/mu*dP/dx) directly allow it to handle nonhomogeneous porous media and meshes of varying element size, which we might want to do later.
 
-## Matplotlib Output
+### Matplotlib Output
 
 We've already gone over outputting results to data. What if you just want some quick results to confirm that everything makes sense? With 1D data, creating line plots will give us faster results. To let us know whether everything went well.
 
@@ -184,6 +184,6 @@ def plot_out(data): # plotting function, takes in data object of specific form a
 plot_out(data_sol) # call the plotting output
 ```
 
-![Multi-plot of the face data.](tim-munuhe.github/assets/images/node_data_sol.png "Pressure, permeability, and viscosity vs. x.")
+![Multi-plot of the face data.](/tim-munuhe.github.io/assets/images/node_data_sol.png "Pressure, permeability, and viscosity vs. x.")
 
 Now that we can output text and figures to check our results, we can use more sophisticated numerical methods to get solutions to more complicated problem while debugging more efficiently.

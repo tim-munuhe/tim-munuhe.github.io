@@ -2,6 +2,17 @@
   
     {
 
+      "title"    : "Basic Python with Darcy&#39;s Law - Meshing, Basic Spatial Solutions, and Plotting Output",
+      "url"      : "/2021/05/01/mesh-fluidpm-plot",
+      "category" : "",
+      "tags"     : "",
+      "date"     : "2021-05-01 00:00:00 -0400",
+      "description" : "Form the mesh objects, calculate a basic solution over the mesh, and plot the output."
+
+    } ,
+  
+    {
+
       "title"    : "Basic Python with Darcy&#39;s Law - User-Defined Parameters",
       "url"      : "/2021/05/01/csv-read-parameters",
       "category" : "",
