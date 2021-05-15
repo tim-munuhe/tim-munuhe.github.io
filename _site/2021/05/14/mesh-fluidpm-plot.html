@@ -30,7 +30,7 @@ print('Face Locations:', base_mesh.xc[0:5])
 &gt;&gt;&gt; Nx: 52
 &gt;&gt;&gt; Outlet Location: 1.0
 &gt;&gt;&gt; Face Locations: [0.   0.   0.02 0.04 0.06]
-</code></pre></div></div><p>The number of elements is correct, the inlet face is duplicated, and the spacing for the interior node locations is correct. For the calculations to follow, we just have to remember the offset between the node and face indices for our accuracy. Now we can output this to a file that another program can use, maybe for visualization, by calling the output method that's also in the mesh class: <code class="language-python">base_mesh.output('base_mesh.dat')</code></p><p>If everything works, the first six lines of your <a href="URL to file">text file</a> will be:</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>i	x	xc
+</code></pre></div></div><p>The number of elements is correct, the inlet face is duplicated, and the spacing for the interior node locations is correct. For the calculations to follow, we just have to remember the offset between the node and face indices for our accuracy. Now we can output this to a file that another program can use, maybe for visualization, by calling the output method that's also in the mesh class: <code class="language-python">base_mesh.output('base_mesh.dat')</code></p><p>If everything works, the first six lines of your <a href="https://github.com/tim-munuhe/Basic-Python-Darcys-Law/blob/main/Meshing_SpatialSol_Output/base_mesh.dat">.dat file</a> will be:</p><div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>i	x	xc
 1	0.0	0.0
 2	0.01	0.0
 3	0.03	0.02

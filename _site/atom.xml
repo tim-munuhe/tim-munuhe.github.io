@@ -4,7 +4,7 @@
  <title>tim-munuhe</title>
  <link href="tim-munuhe.github.io/atom.xml" rel="self"/>
  <link href="tim-munuhe.github.io/"/>
- <updated>2021-05-14T20:23:59-04:00</updated>
+ <updated>2021-05-14T20:30:06-04:00</updated>
  <id>tim-munuhe.github.io</id>
  <author>
    <name>Timothy W. Munuhe, Ph.D.</name>
@@ -72,7 +72,7 @@ print('Face Locations:', base_mesh.xc[0:5])
 
 &lt;p&gt;The number of elements is correct, the inlet face is duplicated, and the spacing for the interior node locations is correct. For the calculations to follow, we just have to remember the offset between the node and face indices for our accuracy. Now we can output this to a file that another program can use, maybe for visualization, by calling the output method that's also in the mesh class: &lt;code class=&quot;language-python&quot;&gt;base_mesh.output('base_mesh.dat')&lt;/code&gt;&lt;/p&gt;
 
-&lt;p&gt;If everything works, the first six lines of your &lt;a href=&quot;URL to file&quot;&gt;text file&lt;/a&gt; will be:&lt;/p&gt;
+&lt;p&gt;If everything works, the first six lines of your &lt;a href=&quot;https://github.com/tim-munuhe/Basic-Python-Darcys-Law/blob/main/Meshing_SpatialSol_Output/base_mesh.dat&quot;&gt;.dat file&lt;/a&gt; will be:&lt;/p&gt;
 
 &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;i	x	xc
 1	0.0	0.0
