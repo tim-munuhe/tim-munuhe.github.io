@@ -1,0 +1,174 @@
+I"]7<p>Now that we have some practice with objects in Python and Darcy’s law, we can create a program that is more expandable and useful. Since this is a physical problem, we need to consider space in our code. So, we need to add a mesh to represent the porous medium and the fluid inside its pores. We also need to output data as plots for immediate review and in a way that other programs can read.</p>
+
+<p>More classes and objects can get unwieldy, so let's develop a sketch of how the program is going to work overall so we can code effectively. First, a text description: the user (you, or me) is going to create a case file that the csv.Dictreader function will read into Python listing case parameters.  A case object will be instantiated using that data just read. This is as far as we got in the previous post. Now, we can create a mesh (object) representing the space filled with the fluid (object) and solid material/matrix (object). All three objects' parameters will be determined by that parameters specified in the case file. Since the fluid is the only one flowing, Darcy's Law will be called on it to calculate the pressure and flow velocity at the locations specified by the mesh. Lastly, relevant properties will be output to a file that the user can plot or analyze.</p>
+
+<p>Simple, right? Remember, one step at a time.</p>
+
+<h3 id="the-mesh">The Mesh</h3>
+
+<p>The mesh can represent a 1D, 2D, or 3D space. Assume we have a cylindrical pipe filled with sand and water. Depending on its width, diameter, and how homogeneous the sand is, we might want to consider it in 3D or 2D. If we also assume the pipe is very long relative to its diameter, we can simplify the problem to 1D. A 1D mesh is essentially a line with points along it while the 2D and 3D spaces can be divided into a variety of 2D and 3D shapes (squares and cubes being particularly common). So, each element of the 1D mesh represents a slice of the pipe.</p>
+
+<p>I'll be using finite difference method for the majority of the blog posts. There's more math here than I care to dig into but I recommend reading Patankar &amp; Spalding’s 1972 paper titled “A Calculation Procedure for Heat, Mass, and Momentum Transfer”. In short, from Darcy’s Law, the pressure gradient is used to calculate the velocity. So, the velocity and pressure are more accurately considered at offset locations, for example on a staggered mesh. That is, where you calculate the velocity is offset from where you calculate the pressures. So, you use the pressures at two adjacent cells to calculate the (volume-averaged) velocity at the face between those cells. You can do this to get the velocities at the interior faces. At the inlet and outlet, the inlet pressure and velocity are collocated which may affect the accuracy. That is not important for the current code but, for better-than-1st-order accuracy, we'd need to derive a better approximation for the pressure gradients there. In any case, <a href="https://www.cfd-online.com/Wiki/Staggered_grid">CFD-Online has a pretty short article about the staggered grid issue</a>.</p>
+
+<p>Back to the OOP: we create a mesh class where each mesh object has a name, shape, density, and specified node (x), interior face (xc), and boundary locations (also xc):</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class mesh(): # mesh class
+    def __init__(self,case): # Take in the case info for certain params
+        dim = 1 # case.dim
+        if (dim == 1):
+            self.Nx = int((case.xL - case.x0)/case.dx + 2.0)
+        
+            # Face locations
+            self.xc = np.ones(self.Nx)*case.x0# Initialize mesh
+            self.xc[self.Nx-1] = case.xL # Outward boundary
+            for i in range(2,self.Nx-1): 
+                self.xc[i] = (i-1)*case.dx # Cell Face Locations
+
+            # Node locations
+            self.x = np.copy(self.xc) # Initialize mesh
+            for i in range(0,self.Nx-1):
+                self.x[i] = (self.xc[i+1] + self.xc[i])/2 # Cell Node Locations: halfway between faces
+            self.x[self.Nx-1] = np.copy(self.xc[self.Nx-1]) # Outward boundary
+    
+    def output(self,fname): # output mesh
+        with open(fname,'w', newline='') as csvfile:
+            mesh_write = csv.writer(csvfile,dialect = 'excel', delimiter = '\t') # writer object
+            mesh_write.writerow(['i', 'x', 'xc']) # header row
+            for i in range(0,self.Nx):
+                mesh_write.writerow([i+1,self.x[i],self.xc[i]]) # actual data rows
+</code></pre></div></div>
+
+<p>The mesh consists of nodes and faces: the number of nodes is the number of slices the make the pipe plus 2. Why the plus 2? There are two additional nodes at the inlet and outlet. There is one less face but, to keep the indices and array lengths the same, the inlet face is duplicated. This helps with coding and that first face can be ignored for the most part. 
+The mesh requires a case object for its instantiation, so we create the mesh object using <code class="language-python">base_mesh = mesh(base)</code>. Let’s ask for some information, just to make sure everything ran smoothly:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>print('Node Locations w/ inlet:', base_mesh.x[0:5]) # check inlet location and spacing
+print('Nx:', base_mesh.Nx) # check number of elements
+print('Outlet Location:', base_mesh.x[base_mesh.Nx-1])
+print('Face Locations:', base_mesh.xc[0:5]) 
+&gt;&gt;&gt; Node Locations w/ inlet: [0.   0.01 0.03 0.05 0.07]
+&gt;&gt;&gt; Nx: 52
+&gt;&gt;&gt; Outlet Location: 1.0
+&gt;&gt;&gt; Face Locations: [0.   0.   0.02 0.04 0.06]
+</code></pre></div></div>
+
+<p>The number of elements is correct, the inlet face is duplicated, and the spacing for the interior node locations is correct. For the calculations to follow, we just have to remember the offset between the node and face indices for our accuracy. Now we can output this to a file that another program can use, maybe for visualization, by calling the output method that's also in the mesh class: <code class="language-python">base_mesh.output('base_mesh.dat')</code></p>
+
+<p>If everything works, the first six lines of your <a href="URL to file">text file</a> will be:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>i	x	xc
+1	0.0	0.0
+2	0.01	0.0
+3	0.03	0.02
+4	0.05	0.04
+5	0.07	0.06
+</code></pre></div></div>
+
+<p>If you’re using excel, you can output a csv file: go to the Data tab and do text-to-columns on all the rows with a tab delimiter to get it formatted.</p>
+
+<h3 id="applying-darcys-law-as-a-method-to-a-fluid-object">Applying Darcy's Law as a Method to a Fluid Object</h3>
+
+<p>Because the porous medium and fluid occupy the space of the mesh, they need to have some of the same properties as the mesh, namely the shape and spatial positions of the mesh. Then, the pressure at <code class="language-python">p[i]</code> is the pressure at the location <code class="language-python">x[i]</code>. Apart from the size and shape, the fluid and porous medium share a pressure and have their own properties as outlined in Darcy's Law. Both have their own names and volume fractions. The fluid will have a viscosity and velocity and the porous medium will have a permeability:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class fluid(): # fluid class, can create multiple fluid objects for multiphase flow or other studies
+    def __init__(self,mesh,fluid_prop):
+        self.name = fluid_prop['Name']
+        # Initialize variables
+        self.p = np.ones(mesh.Nx)*fluid_prop['p0'] # Pressure
+        self.p[mesh.Nx-1] = fluid_prop['pL'] # Pressure boundary at x = L
+        self.u = np.ones(mesh.Nx)*fluid_prop['u0'] # Velocity: Staggered mesh so velocity at faces
+        self.mu = np.ones(mesh.Nx)*fluid_prop['mu'] # Viscosity
+    def p_lin(self,mesh):
+        N = mesh.Nx
+        L = mesh.x[N-1]
+        L0 = mesh.x[0]
+        for i in range(1,N):
+            self.p[i] = (self.p[N-1]-self.p[0])/(L-L0)*mesh.x[i]
+    def darcyv(self,mesh,pm):
+        N = mesh.Nx
+        self.u[0] = -pm.K[0]/self.mu[0]*(self.p[1]-self.p[0])/(mesh.x[1]-mesh.x[0]) # inlet
+        self.u[1] = self.u[0] # same location
+        for i in range(2,N-1): # interior faces
+            Ai = pm.K[i-1]/self.mu[i-1]/(mesh.xc[i]-mesh.x[i-1])
+            Ai1 = pm.K[i]/self.mu[i]/(mesh.x[i]-mesh.xc[i])
+            self.u[i] = -Ai*Ai1/(Ai+Ai1)*(self.p[i]-self.p[i-1])
+        self.u[N-1] = -pm.K[N-1]/self.mu[N-1]*(self.p[N-1]-self.p[N-2])/(mesh.x[N-1]-mesh.x[N-2]) # outlet
+
+class por_med(): # porous medium class, for parametric studies or composite porous media
+    def __init__(self,mesh,pm_prop):
+        self.name = pm_prop
+        # Initialize Variables
+        self.K = np.ones(mesh.Nx)*pm_prop['K'] # Permeability
+        self.eps = np.ones(mesh.Nx)*pm_prop['eps'] # Porosity
+.
+.
+.
+fl1 = fluid(base_mesh,base.fl) # fluid object, determined by mesh and case's fluid properties
+pm1 = por_med(base_mesh,base.pm) # porous medium object, determined by mesh and case's porous medium properties
+</code></pre></div></div>
+
+<p>With the fluid and porous medium objects created, we can find the pressures and flow velocities within the domain at the points specified by the mesh. While we can do something similar to the direct calculation in in the first blog post, let’s create methods so that the functions are tied to the specific objects. This connects the equations to the specific parts of the problem more directly.</p>
+
+<p>Since the porous medium is homogeneous, we can assume that the pressure distribution in the porous medium is linear, with the boundary conditions in the case corresponding to the inlet and outlet pressures. Then, we can code a very simple pressure calculation method for the fluid below the instantiation, represented by the <code class="language-python">p_lin(mesh)</code> method in the fluid class above:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>print('Initial Pressure:',fl1.p[0:4])
+fl1.p_lin(base_mesh)
+print('Linear Pressure:',fl1.p[0:4])
+&gt;&gt;&gt; Initial Pressure: [0. 0. 0. 0.]
+&gt;&gt;&gt; Linear Pressure: [ 0. -1. -3. -5.]
+</code></pre></div></div>
+
+<p>At the faces (represented by <code class="language-python">xc</code>) we can then calculate the velocities using the Darcy’s Law method also in the fluid class:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>print('Initial Velocity (correct):',fl1.u[0:4]) # velocity from initialization
+fl1.u = np.zeros(base_mesh.Nx) # zero out velocity 
+fl1.darcyv(base_mesh,pm1) # use darcyv method
+print('Final Velocity:',fl1.u[0:4]) # print to confirm that darcyv did what it was supposed to (got same solution as initialization)
+&gt;&gt;&gt; Initial Velocity (correct): [1.e-04 1.e-04 1.e-04 1.e-04]
+&gt;&gt;&gt; Final Velocity: [1.e-04 1.e-04 1.e-04 1.e-04]
+</code></pre></div></div>
+
+<p>The <code class="language-python">darcyv</code> method as it is coded looks complicated but it's pretty simple mathematically. The changes made from just applying Darcy's law from the previous post (-K/mu*dP/dx) directly allow it to handle nonhomogeneous porous media and meshes of varying element size, which we might want to do later.</p>
+
+<h3 id="matplotlib-output">Matplotlib Output</h3>
+
+<p>We’ve already gone over outputting results to data. What if you just want some quick results to confirm that everything makes sense? With 1D data, creating line plots will give us faster results. To let us know whether everything went well.</p>
+
+<p>The class formation format we’ve used so far has been somewhat cumbersome due to all the parameters. Now, I just want to collect the solution to be output to an object that I can pass to a plotting function. To make the solution object, I can use metaprogramming with the type function:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>data_sol = type('sol', (object,), {})() # empty object (metaprogramming)
+
+data_sol.Np = 3 # Data at nodes: x p, K, mu
+data_sol.Nx = base_mesh.Nx
+data_sol.varnamex = 'x (m)'
+data_sol.varname = ['p (Pa)', 'K ($m^2$)', '\u03BC (Pa*s)']
+data_sol.x = base_mesh.x
+data_sol.var = np.zeros((data_sol.Nx,data_sol.Np))
+data_sol.var = np.concatenate((fl1.p.reshape(data_sol.Nx,1)
+                               ,pm1.K.reshape(data_sol.Nx,1)
+                               ,fl1.mu.reshape(data_sol.Nx,1))
+                              ,axis=1)
+</code></pre></div></div>
+
+<p>Here, I've created a new sol object data_sol that is initially empty. I’ve then filled it with the data I need to output and visualize, namely the pressure, permeability, and viscosity which are at the nodes. I want the velocity too but I need a different object to handle the variables calculated at the face. Corresponding code is in the Github repo for this. For now, let's focus on the plot. I can pass this sol object to a function that knows how to read it and create plots:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def plot_out(data): # plotting function, takes in data object of specific form and prints plots
+    N_param = data.Np
+    N = data.Nx
+    fig, ax = plt.subplots(N_param,1,figsize=(4,5))    
+    for i in range(0,N_param):
+        ax[i].plot(data.x, data.var[0:,i], color = 'black',linewidth=0.5)
+        ax[i].set_xlabel(data.varnamex,fontsize=12) 
+        ax[i].set_ylabel(data.varname[i],fontsize=12)
+    fig.tight_layout()
+    plt.show()  
+.
+.
+.
+.
+plot_out(data_sol) # call the plotting output
+</code></pre></div></div>
+
+<p><img src="../../node_data_sol.png" alt="Multi-plot of the face data." title="Pressure, permeability, and viscosity vs. x." /></p>
+
+<p>Now that we can output text and figures to check our results, we can use more sophisticated numerical methods to get solutions to more complicated problem while debugging more efficiently.</p>
+:ET

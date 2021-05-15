@@ -1,4 +1,4 @@
-I"{7<p>Now that we have some practice with objects in Python and Darcy’s law, we can create a program that is more expandable and useful. Since this is a physical problem, we need to consider space in our code. So, we need to add a mesh to represent the porous medium and the fluid inside its pores. We also need to output data as plots for immediate review and in a way that other programs can read.</p>
+I"�6<p>Now that we have some practice with objects in Python and Darcy’s law, we can create a program that is more expandable and useful. Since this is a physical problem, we need to consider space in our code. So, we need to add a mesh to represent the porous medium and the fluid inside its pores. We also need to output data as plots for immediate review and in a way that other programs can read.</p>
 
 <p>More classes and objects can get unwieldy, so let's develop a sketch of how the program is going to work overall so we can code effectively. First, a text description: the user (you, or me) is going to create a case file that the csv.Dictreader function will read into Python listing case parameters.  A case object will be instantiated using that data just read. This is as far as we got in the previous post. Now, we can create a mesh (object) representing the space filled with the fluid (object) and solid material/matrix (object). All three objects' parameters will be determined by that parameters specified in the case file. Since the fluid is the only one flowing, Darcy's Law will be called on it to calculate the pressure and flow velocity at the locations specified by the mesh. Lastly, relevant properties will be output to a file that the user can plot or analyze.</p>
 
@@ -167,8 +167,6 @@ data_sol.var = np.concatenate((fl1.p.reshape(data_sol.Nx,1)
 .
 plot_out(data_sol) # call the plotting output
 </code></pre></div></div>
-
-<p><img src="/tim-munuhe.github.io/assets/images/node_data_sol.png" alt="Multi-plot of the face data." title="Pressure, permeability, and viscosity vs. x." /></p>
 
 <p>Now that we can output text and figures to check our results, we can use more sophisticated numerical methods to get solutions to more complicated problem while debugging more efficiently.</p>
 :ET
