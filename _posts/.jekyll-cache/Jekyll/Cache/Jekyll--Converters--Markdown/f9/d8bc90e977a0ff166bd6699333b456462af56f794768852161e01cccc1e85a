@@ -1,0 +1,115 @@
+I"�<p>In the previous blog post, I introduced some object-oriented Python by creating a parameter class that initialized a solution to Darcy's law for some default fluid and porous medium. So, just by creating the case, we were done. Now, we want to feed our own properties into Darcy's Law.</p>
+
+<p>Let's start with the (easier) parameter problem: we can feed in our own fluid and porous medium properties by adding to the instantiation’s input. Currently, we just have <code class="language-python">(self)</code> for the initialization. Let's add the length of the porous medium:</p>
+
+<pre><code class="language-python">class case_param(): <br />    def __init__(self,L): <br />        self.dim = 1 # dimensions <br />        self.x0 = 0.0 # inlet position <br />        self.xL = self.x0 + L # outlet <br />        fluid_name = 'Water' <br />        mu = 0.001 <br />        u0 = 0.0 <br />        p0 = 0.0 # inlet pressure <br />        pL = -100.0 # outlet <br />        self.fl = {'Name': fluid_name, 'mu': mu, 'u0': u0, 'p0': p0, 'pL': pL} <br />        pm_name = 'Sand' <br />        K = 1.0E-9 <br />        eps = 0.15 <br />        self.pm = {'Name': pm_name, 'K':K, 'eps':eps} &gt;br&gt;         self.fl['u0'] = -K/mu*(pL-p0)/(self.xL-self.x0) </code> </pre>
+
+<p>When we create the <code class="language-python">case_param</code> object, we need to give the length in the parentheses, like so:</p>
+
+<pre><code class="language-python">base = case_param(1.0)</code></pre>
+
+<p>Then, when we call the case's outlet location, we get our length:</p>
+
+<pre><code class="language-python">print(base.xL) <br />&gt;&gt;&gt; 9.999999999999999e-05  </code> </pre>
+
+<p>which gives us the same answer as the first blog post:</p>
+
+<pre><code class="language-python">print(base.fl['u0']) <br /> &gt;&gt;&gt; 9.999999999999999e-05  </code> </pre>
+
+<p>We could keep going this way but we have at least 8 parameters for our case that we'd want to vary: the fluid name, viscosity, inlet and outlet pressure, porous medium name, permeability, porosity, and the length of the domain. Instead, we can use text files or CSV files with specified formats to feed in the case parameters, allowing a more streamlined multi-case process. Let's use CSV: we can create it in Excel and it’s use in Python for Data Science means there will be resources for troublshooting later (;-)).</p>
+
+<p>First, import the <code class="language-python">CSV</code> package:</p>
+
+<pre><code class="language-python">import csv  </code> </pre>
+
+<p>Next, let’s create our CSV case file using Excel:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>case_name</th>
+      <th>fluid</th>
+      <th>p0</th>
+      <th>pL</th>
+      <th>mu</th>
+      <th>porous_medium</th>
+      <th>length</th>
+      <th>K</th>
+      <th>eps</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>base</td>
+      <td>water</td>
+      <td>0.000</td>
+      <td>-100.000</td>
+      <td>0.001</td>
+      <td>sand</td>
+      <td>1.000</td>
+      <td>1.00E-09</td>
+      <td>0.150</td>
+    </tr>
+    <tr>
+      <td>long</td>
+      <td>water</td>
+      <td>0.000</td>
+      <td>-100.000</td>
+      <td>0.001</td>
+      <td>sand</td>
+      <td>2.000</td>
+      <td>1.00E-09</td>
+      <td>0.150</td>
+    </tr>
+    <tr>
+      <td>press</td>
+      <td>water</td>
+      <td>100.000</td>
+      <td>-100.000</td>
+      <td>0.001</td>
+      <td>sand</td>
+      <td>1.000</td>
+      <td>1.00E-09</td>
+      <td>0.150</td>
+    </tr>
+    <tr>
+      <td>powder</td>
+      <td>water</td>
+      <td>0.000</td>
+      <td>-100.000</td>
+      <td>0.001</td>
+      <td>powder</td>
+      <td>1.000</td>
+      <td>1.00E-11</td>
+      <td>0.300</td>
+    </tr>
+    <tr>
+      <td>oil</td>
+      <td>oil</td>
+      <td>0.000</td>
+      <td>-100.000</td>
+      <td>0.060</td>
+      <td>sane</td>
+      <td>1.000</td>
+      <td>1.00E-09</td>
+      <td>0.150</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>We can use the <code class="language-python">csv.reader</code> function and skip the first line to create individual case parameter lists, or, we can use the <code class="language-python">csv.DictReader</code> function to construct individual case dictionaries:</p>
+
+<pre><code class="language-python">with open('casefile.csv',newline='') as casefile: <br />    casereader = csv.DictReader(casefile) <br />    i = 0 <br />    caselist = {} <br />    for row in casereader:    <br />        caselist[i] = row <br />        print(row['case_name'], row['fluid'], row['mu']) # check that code works as expected <br />        i += 1 <br />&gt;&gt;&gt; base water 0.001 <br />&gt;&gt;&gt; long water 0.001 <br />&gt;&gt;&gt; press water 0.001 <br />&gt;&gt;&gt; powder water 0.001 <br />&gt;&gt;&gt; oil oil 0.060 </code> </pre>
+
+<p>DictReader uses the first row of the CSV file as the keys and the subsequent row values are the dictionary entries. The only problem is that all entries are read as strings, which must convert the number variables to floats in the &lt;pre&gt;<code class="language-python">case_param</code> &lt;/pre&gt; instantiation:</p>
+
+<pre><code class="language-python">class case_param(): <br />    def __init__(self,param): <br />        self.name = param['case_name'] # now the name is given inside the case, not as the case's actual name <br />        self.dim = 1 # dimensions <br />        self.x0 = 0.0 # inlet position <br />        self.xL = self.x0 + float(param['length']) # outlet <br />        fluid_name = param['fluid'] <br />        mu = float(param['mu']) <br />        u0 = 0.0 <br />        p0 = float(param['p0']) # inlet pressure <br />        pL = float(param['pL']) # outlet <br />        self.fl = {'Name': fluid_name, 'mu': mu, 'u0': u0, 'p0': p0, 'pL': pL} <br />        pm_name = param['porous_medium']  <br />        K = float(param['K']) <br />        eps = float(param['eps']) <br />        self.pm = {'Name': pm_name, 'K':K, 'eps':eps} <br />         self.fl['u0'] = -K/mu*(pL-p0)/(self.xL-self.x0) </code> </pre>
+
+<p>We can initialize the original base case and the oil case and compare the velocities:</p>
+
+<pre><code class="language-python"> base = case_param(caselist[0]) <br /> oil = case_param(caselist[4]) <br /> print(base.fl['u0'] <br /> &gt;&gt;&gt; 9.999999999999999e-05 <br /> print(oil.fl['u0'] <br /> &gt;&gt;&gt; 1.6666666666666667e-06 </code> </pre>
+
+<p>We can see that the viscous oil slows down the flow, as expected. We haven’t changed the Darcy's Law calculation so we know, at least, that the code is reading the CSV file correctly and initializing the case properly.</p>
+
+<p>The next step is to see what is going on between the inlet and outlet, specifically with the pressure.</p>
+:ET

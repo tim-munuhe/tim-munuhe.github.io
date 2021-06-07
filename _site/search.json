@@ -2,6 +2,17 @@
   
     {
 
+      "title"    : "Basic Python with Darcy&#39;s Law - Solving Darcy&#39;s Law and Continuity Equation on 1D Mesh",
+      "url"      : "/2021/06/07/solve-1d-darcy-continuity",
+      "category" : "",
+      "tags"     : "",
+      "date"     : "2021-06-07 00:00:00 -0400",
+      "description" : "Create methods to solve for the pressure and velocity in a 1D saturated porous medium using Darcy&#39;s Law and the continuity equation"
+
+    } ,
+  
+    {
+
       "title"    : "Basic Python with Darcy&#39;s Law - Meshing, Basic Spatial Solutions, and Plotting Output",
       "url"      : "/2021/05/14/mesh-fluidpm-plot",
       "category" : "",
