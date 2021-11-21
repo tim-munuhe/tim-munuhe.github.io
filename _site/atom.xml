@@ -4,13 +4,531 @@
  <title>tim-munuhe</title>
  <link href="tim-munuhe.github.io/atom.xml" rel="self"/>
  <link href="tim-munuhe.github.io/"/>
- <updated>2021-06-07T02:58:23-04:00</updated>
+ <updated>2021-11-21T15:43:17-05:00</updated>
  <id>tim-munuhe.github.io</id>
  <author>
    <name>Timothy W. Munuhe, Ph.D.</name>
    <email>timothy.munuhe@gmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>Basic Python with Darcy's Law - Algorithms to Solve System of Linear Equations</title>
+   <link href="tim-munuhe.github.io/2021/11/21/apply-solvers"/>
+   <updated>2021-11-21T00:00:00-05:00</updated>
+   <id>tim-munuhe.github.io/2021/11/21/Apply-Solvers</id>
+   <content type="html">&lt;p&gt;We have equations for the pressure at every point within the 1D domain, but we’re using a basic method to solve the equations. Here’s some trivia: Gauss mentioned it first in 1823 but the method wasn’t published until Seidel wrote it up in 1874. Since then, many newer methods have been developed to solve linear systems of equations. This post will cover three more commonly used algorithms: Cholesky decomposition, Gauss-Jordan, and the conjugate gradient method.&lt;/p&gt;
+
+&lt;h2 id=&quot;system-characterization&quot;&gt;System Characterization&lt;/h2&gt;
+
+&lt;p&gt;First, let’s consider our system of equations: to find the pressure, we solve only three unique sets of equations: the equations for the cells near the inlet and outlet and the equation for all the cells in the middle. Additionally, the cells’ pressures only depend on the adjacent pressures, of which two are given (inlet and outlet). Such a system can be described in matrix form Ax = b, where A is a coefficient matrix, x is a column vector representing the variables we want to find, and b is a column vector representing the constants in each equation:&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt;
+&lt;img src=&quot;https://latex.codecogs.com/svg.image?A&amp;space;=&amp;space;\begin{bmatrix}1&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;0&amp;space;\\A_{21}&amp;space;&amp;amp;&amp;space;-&amp;space;A_{21}-&amp;space;A_{23}&amp;space;&amp;amp;&amp;space;A_{23}&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;0&amp;space;\\...&amp;space;&amp;amp;&amp;space;A_{32}&amp;space;&amp;amp;&amp;space;-A_{32}&amp;space;-&amp;space;A_{34}&amp;space;&amp;amp;&amp;space;A_{34}&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;0&amp;space;\\...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;\\...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;A_{i,i-1}&amp;space;&amp;amp;&amp;space;-A_{i,i-1}&amp;space;-&amp;space;A_{i,i&amp;plus;1}&amp;space;&amp;amp;&amp;space;A_{i,i&amp;plus;1}&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;\\...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;\\0&amp;space;&amp;amp;&amp;space;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;...&amp;space;&amp;amp;&amp;space;1&amp;space;\\\end{bmatrix}&quot; title=&quot;A = \begin{bmatrix}1 &amp;amp; ... &amp;amp; ... &amp;amp; ... &amp;amp; ... &amp;amp; ... &amp;amp; 0 \\A_{21} &amp;amp; - A_{21}- A_{23} &amp;amp; A_{23} &amp;amp; ... &amp;amp; ... &amp;amp; ... &amp;amp; 0 \\... &amp;amp; A_{32} &amp;amp; -A_{32} - A_{34} &amp;amp; A_{34} &amp;amp; ... &amp;amp; ... &amp;amp; 0 \\... &amp;amp; ... &amp;amp; ... &amp;amp; ... &amp;amp; ... &amp;amp; ... &amp;amp; ... \\... &amp;amp; ... &amp;amp; A_{i,i-1} &amp;amp; -A_{i,i-1} - A_{i,i+1} &amp;amp; A_{i,i+1} &amp;amp; ... &amp;amp; ... \\... &amp;amp; ... &amp;amp; ... &amp;amp; ... &amp;amp; ... &amp;amp; ... &amp;amp; ... \\0 &amp;amp; ... &amp;amp; ... &amp;amp; ... &amp;amp; ... &amp;amp; ... &amp;amp; 1 \\\end{bmatrix}&quot; /&gt;
+&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt;
+
+&lt;img src=&quot;https://latex.codecogs.com/svg.image?x&amp;space;=&amp;space;\begin{bmatrix}P_1&amp;space;\\:&amp;space;\\P_i&amp;space;\\:&amp;space;\\P_N\end{bmatrix},&amp;space;\&amp;space;b&amp;space;=&amp;space;\begin{bmatrix}P_{inlet}&amp;space;\\:&amp;space;\\0&amp;space;\\:&amp;space;\\P_{outlet}\end{bmatrix}&amp;space;&quot; title=&quot;x = \begin{bmatrix}P_1 \\: \\P_i \\: \\P_N\end{bmatrix},&amp;space;\ b = \begin{bmatrix}P_{inlet} \\: \\0 \\: \\P_{outlet}\end{bmatrix} &quot; /&gt;
+
+&lt;/p&gt;
+
+&lt;p&gt;The inlet and outlet pressures are represented by the top and bottom rows of the matrix and both vectors, respectively. Because they have known pressures, they only have one value in the matrix and the given pressure in the b-vector. All other “internal” pressures depend on their neighboring pressures only. Therefore, their b-vector values are zero and they have three entries in their A-matrix (the left, center, and right cells).&lt;/p&gt;
+
+&lt;p&gt;One important feature of the matrix: it is symmetric. That is, that the coefficient matrix’s transpose is equal to the matrix itself. We can see this instantly by checking the entries on either side of the top left to bottom right diagonal. Additionally, the matrix is positive definite. This is not as obvious, unless you’ve had prior experience with such a matrix, but it can be checked by conducting Gaussian elimination to get the matrix into upper triangular/row echelon form. Let's get the row-echelon form using Python and NumPy:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;import numpy as np
+
+def row_reduc(A_org):
+    N,M = A_org.shape
+    if (N != M): raise Exception('Matrix must be square! Size:',N,',',M)
+    
+    # Setup
+    A = np.copy(A_org)
+    A_inv = np.eye(N) # A inverse initialized as identity matrix
+    P_gen = np.eye(N) # General Permutation matrix
+    P = np.eye(N) # Permutation matrix for this column pivot
+
+    # Reduce to upper tridiagonal coefficient matrix
+    for i in range(0, N-1):
+        # Find row of pivot element in column i
+        i_max = i
+        for j in range(i+1,N):
+          if (abs(A[i_max,i]) &amp;lt; abs(A[j,i])): i_max = j
+        if (A[i_max,i] &amp;lt; 0.0):
+            A[i_max,0:] = A[i_max,0:]*-1.0 # Switch signs
+            A_inv[i_max,0:] = A_inv[i_max,0:]*-1.0
+        # Move pivot row so column is on diagonal
+        if (i_max != i): # Swap rows
+            P[i_max, i_max] = 0.0
+            P[i, i] = 0.0
+            P[i_max, i] = 1.0 # Move row i to row i_max
+            P[i, i_max] = 1.0 # Move row i_max to row i
+            A = np.matmul(P,A)
+            A_inv = np.matmul(P,A_inv) 
+            P_gen = np.matmul(P, P_gen) # !compt. intensive!
+        # Pivot
+        fac = A[i,i]
+        A_inv[i,0:] = A_inv[i,0:]/fac
+        A[i,0:] = A[i,0:]/fac # pivot element becomes 1
+        for j in range(i+1,N): # Other rows
+            if  (A[j,i] != 0.0): # skip rows with column element = 0
+                fac = A[j,i] # factor for multiplying pivot row
+                A[j,0:] -= fac*A[i,0:]
+                A_inv[j,0:] -= fac*A_inv[i,0:]
+    return A 
+
+rng2 = np.random.default_rng()
+N = rng2.integers(6,14)
+gen_num = rng2.integers(10,100000)
+A, x, b = rand_SPD_Axb(N, gen_num) # Random SPD problem generator
+
+A_red = row_reduc(A)
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The random SPD coefficient matrix is:&lt;/p&gt;
+&lt;p align=&quot;center&quot;&gt;
+&lt;img src=&quot;https://latex.codecogs.com/svg.image?A&amp;space;=&amp;space;\begin{bmatrix}11&amp;space;&amp;space;&amp;amp;&amp;space;2&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;3.5&amp;space;&amp;amp;&amp;space;1.5&amp;space;&amp;amp;&amp;space;3.5&amp;space;&amp;amp;&amp;space;2&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;3&amp;space;&amp;space;&amp;space;\\2&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;7&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0.5&amp;space;&amp;amp;&amp;space;5&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;2.5&amp;space;&amp;amp;&amp;space;2&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;2.5&amp;space;\\3.5&amp;space;&amp;amp;&amp;space;0.5&amp;space;&amp;amp;&amp;space;10&amp;space;&amp;space;&amp;amp;&amp;space;2.5&amp;space;&amp;amp;&amp;space;3&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;4&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;1&amp;space;&amp;space;&amp;space;\\1.5&amp;space;&amp;amp;&amp;space;5&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;2.5&amp;space;&amp;amp;&amp;space;8&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0.5&amp;space;&amp;amp;&amp;space;2.5&amp;space;&amp;amp;&amp;space;3.5&amp;space;\\3.5&amp;space;&amp;amp;&amp;space;2.5&amp;space;&amp;amp;&amp;space;3&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0.5&amp;space;&amp;amp;&amp;space;12&amp;space;&amp;space;&amp;amp;&amp;space;2&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;2&amp;space;&amp;space;&amp;space;\\2&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;2&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;4&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;2.5&amp;space;&amp;amp;&amp;space;2&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;11&amp;space;&amp;space;&amp;amp;&amp;space;1&amp;space;&amp;space;&amp;space;\\3&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;2.5&amp;space;&amp;amp;&amp;space;1&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;3.5&amp;space;&amp;amp;&amp;space;2&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;1&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;12&amp;space;\end{bmatrix}&quot; title=&quot;A = \begin{bmatrix}11 &amp;amp; 2 &amp;amp; 3.5 &amp;amp; 1.5 &amp;amp; 3.5 &amp;amp; 2 &amp;amp; 3 \\2 &amp;amp; 7 &amp;amp; 0.5 &amp;amp; 5 &amp;amp; 2.5 &amp;amp; 2 &amp;amp; 2.5 \\3.5 &amp;amp; 0.5 &amp;amp; 10 &amp;amp; 2.5 &amp;amp; 3 &amp;amp; 4 &amp;amp; 1 \\1.5 &amp;amp; 5 &amp;amp; 2.5 &amp;amp; 8 &amp;amp; 0.5 &amp;amp; 2.5 &amp;amp; 3.5 \\3.5 &amp;amp; 2.5 &amp;amp; 3 &amp;amp; 0.5 &amp;amp; 12 &amp;amp; 2 &amp;amp; 2 \\2 &amp;amp; 2 &amp;amp; 4 &amp;amp; 2.5 &amp;amp; 2 &amp;amp; 11 &amp;amp; 1 \\3 &amp;amp; 2.5 &amp;amp; 1 &amp;amp; 3.5 &amp;amp; 2 &amp;amp; 1 &amp;amp; 12 \end{bmatrix}&quot; /&gt;
+&lt;/p&gt;
+&lt;p&gt;After passing it to the row_reduc function, we get:&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt;
+&lt;img src=&quot;https://latex.codecogs.com/svg.image?A&amp;space;=&amp;space;\begin{bmatrix}1&amp;space;&amp;amp;&amp;space;0.181818&amp;space;&amp;amp;&amp;space;0.318182&amp;space;&amp;amp;&amp;space;0.136364&amp;space;&amp;amp;&amp;space;0.318182&amp;space;&amp;amp;&amp;space;0.181818&amp;space;&amp;amp;&amp;space;0.272727&amp;space;\\0&amp;space;&amp;amp;&amp;space;1&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;-0.02055&amp;space;&amp;amp;&amp;space;0.712329&amp;space;&amp;amp;&amp;space;0.280822&amp;space;&amp;amp;&amp;space;0.246575&amp;space;&amp;amp;&amp;space;0.294521&amp;space;\\0&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;1&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0.238628&amp;space;&amp;amp;&amp;space;0.216654&amp;space;&amp;amp;&amp;space;0.382421&amp;space;&amp;amp;&amp;space;0.009638&amp;space;\\0&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;1&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;-0.44976&amp;space;&amp;amp;&amp;space;0.063985&amp;space;&amp;amp;&amp;space;0.427869&amp;space;\\0&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;1&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0.030697&amp;space;&amp;amp;&amp;space;0.134696&amp;space;\\0&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;1&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;-0.02305&amp;space;\\0&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;0&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;9.7165&amp;space;&amp;space;\end{bmatrix}&quot; title=&quot;A = \begin{bmatrix}1 &amp;amp; 0.181818 &amp;amp; 0.318182 &amp;amp; 0.136364 &amp;amp; 0.318182 &amp;amp; 0.181818 &amp;amp; 0.272727 \\0 &amp;amp; 1 &amp;amp; -0.02055 &amp;amp; 0.712329 &amp;amp; 0.280822 &amp;amp; 0.246575 &amp;amp; 0.294521 \\0 &amp;amp; 0 &amp;amp; 1 &amp;amp; 0.238628 &amp;amp; 0.216654 &amp;amp; 0.382421 &amp;amp; 0.009638 \\0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 1 &amp;amp; -0.44976 &amp;amp; 0.063985 &amp;amp; 0.427869 \\0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 1 &amp;amp; 0.030697 &amp;amp; 0.134696 \\0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 1 &amp;amp; -0.02305 \\0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 1 \end{bmatrix}&quot; /&gt;
+&lt;/p&gt;
+
+&lt;p&gt;The diagonal elements of the matrix in row-echelon form are its pivots. A matrix is symmetric positive-definite if those pivots are positive non-zero values, as we’ve confirmed above. This gives us options with how we want to solve the system.&lt;/p&gt;
+
+&lt;h2 id=&quot;solution-methods&quot;&gt;Solution Methods&lt;/h2&gt;
+
+&lt;p&gt;There are a number of methods that can be applied to solving linear systems of equations with symmetric positive-definite coefficient matrices. We may classify these methods as iterative or direct. Iterative methods, like the Gauss-Seidel method we’ve already used, work by using successive solutions to get closer to the true solution. Apart from the Gauss-Seidel method, there is the similar Jacobi method as well as the more sophisticated Conjugate Gradient method. Direct methods solve the system Ax = b by finding the inverse of A and multiplying by the b matrix. Gaussian elimination, a variant of which is used in this post (the Gauss-Jordan method) is one method and Cholesky decomposition is another.&lt;/p&gt;
+
+&lt;p&gt;The Jacobi method is like Gauss-Seidel but uses the the previous solution at each iteration. Dr. Zhiliang Xu from Notre Dame University presents a &lt;a href=&quot;https://www3.nd.edu/~zxu2/acms40390F12/Lec-7.3.pdf&quot;&gt;brief comparison&lt;/a&gt; of the two methods and discusses convergence rates.&lt;/p&gt;
+
+&lt;p&gt;I recommend to the reader L. Ridgeway Scott’s discussion of the Conjugate Gradient method in their Numerical Analysis text [ref] (with Wikipedia for some orientation). Gross high-level simplification: imagine a space where the the true solution of a function Ax = b is separated from an initial conditon x_0. The conjugate gradient method finds a numerical solution close to the true solution by minimizing the distance between the numerical solution and the true solution (&lt;em&gt;Q&lt;sub&gt;A&lt;/sub&gt; = x&lt;sup&gt;T&lt;/sup&gt; Ax/2 - b&lt;sup&gt;T&lt;/sup&gt;x&lt;/em&gt;). To minimize this distance, its gradient &lt;em&gt;grad Q&lt;sub&gt;A&lt;/sub&gt;&lt;/em&gt; and the numerical residual &lt;em&gt;Ax - b&lt;/em&gt; are used to find a direction and step size for for the numerical solution to be shifted. The &lt;a href=&quot;https://en.wikipedia.org/wiki/Conjugate_gradient_method&quot;&gt;Wikipedia page&lt;/a&gt; has a handy graphic showing this process geometrically and distinguishes the conjugate gradient from the gradient descent method (also seen in ML) by how the search directions differ: the conjugate gradient method changes each step’s search direction so that sequential search directions are orthogonal (or conjugate) to each other. These direction changes avoid repeating solutions or search directions.&lt;/p&gt;
+
+&lt;p&gt;In mathematical notation, we consider the problem &lt;em&gt;Cy=g&lt;/em&gt; and start with the residual as the search direction:&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt;
+&lt;img src=&quot;https://latex.codecogs.com/svg.image?\begin{align*}Cy&amp;space;&amp;amp;=&amp;space;g&amp;space;\\&amp;space;s_0&amp;space;=&amp;space;r_0&amp;space;&amp;amp;=&amp;space;Cy_0-g\end{align*}&quot; /&gt;
+&lt;/p&gt;
+
+&lt;p&gt;Starting with our initial condition &lt;em&gt;y&lt;sub&gt;0&lt;/sub&gt;&lt;/em&gt;, we can calculate the initial residual &lt;em&gt;r&lt;sub&gt;0&lt;/sub&gt;&lt;/em&gt; which is set to the initial search direction &lt;em&gt;s&lt;sub&gt;0&lt;/sub&gt;&lt;/em&gt;. Then, the iteration begins:&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt;
+&lt;img src=&quot;https://latex.codecogs.com/svg.image?\begin{align*}for\;\;k &amp;amp;= 0,1,2,...:\\ &amp;amp;\alpha_k =-\dfrac{(r_k,s_k)_I}{(s_k,z_k)_I},\;\; (r_k,s_k)_I = r_k^T s_k\\&amp;amp;y_{k+1} = y_k + \alpha_k s_k,\;\; z_k=Cs_k\\ &amp;amp;r_{k+1} = Cy_{k+1}-g=r_k+\alpha_kCs_k=r_k+\alpha_kz_k\\ &amp;amp;\beta_k = -\dfrac{(r_{k+1},z_k)_I}{(s_k,z_k)_I}\\ &amp;amp;s_{k+1} = r_{k+1} + \beta_k s_k \end{align*} &quot; /&gt;
+&lt;/p&gt;
+
+&lt;p&gt;In the above algorithm, all lower-case latin letters are column vectors and greek letters are scalars. With each iteration, the algorithm moves the numerical solution &lt;em&gt;y&lt;sub&gt;k&lt;/sub&gt;&lt;/em&gt; closer to the true solution by shifting it based on search directions &lt;em&gt;s&lt;sub&gt;k&lt;/sub&gt;&lt;/em&gt;, which itsef changes based on the residual and its previous iterations. The conjugate gradient method differs from other gradient descent methods by using search directions which are orthogonal to each other so that the solutions aren’t repeated.&lt;/p&gt;
+
+&lt;p&gt;Direct solution methods basically solve the system &lt;em&gt;Ax = b&lt;/em&gt; as &lt;em&gt;x = A&lt;sup&gt;-1&lt;/sup&gt; b&lt;/em&gt;, which requires calculating the inverse. Gauss-Jordan elimination is a direct method where equations are reduced into a form that allows substituion. For example, in the pressure equation for Darcy’s law, the boundary conditions are given. Using Gauss-Jordan elimination, one would be able to reduce the system of equations to a form (see Upper Triangular form) where you may substitute the outlet pressure into an equation for the adjacent cell’s pressure. You may then solve for that cell’s pressure which will be used in the next cell’s equation.&lt;/p&gt;
+
+&lt;p&gt;The Gauss-Jordan elimination algorithm included in the code presented here includes full-pivoting, basically conducting row operations to transform the original matrix A into an identity matrix I. By conducting the same row operations on the original matrix A and an identity matrix I, one can find the inverse of matrix A which can then be used as a linear operator with the source/constant vector b (&lt;em&gt;x = A&lt;sup&gt;-1&lt;/sup&gt;b&lt;/em&gt;). If the terms in A are constant over the time of a transient simulation, then this operation only needs to be done once, at the beginning, which saves computational time.&lt;/p&gt;
+
+&lt;p&gt;Cholesky factorization is another direct method which divides the original coefficient matrix A into a lower triangular matrix and its conjugate transpose. It then conducts a two-step solution where an intermediate vector &lt;em&gt;y&lt;/em&gt; is solved for with the lower triangular matrix &lt;em&gt;L&lt;/em&gt; and the original source/constant vector &lt;em&gt;b&lt;/em&gt; (&lt;em&gt;Ly = b&lt;/em&gt;), then the desired vector x is solved for using the conjugate transpose &lt;em&gt;L&lt;sup&gt;*&lt;/sup&gt;&lt;/em&gt; and the intermediate vector (&lt;em&gt;L&lt;sup&gt;*&lt;/sup&gt;x = y&lt;/em&gt;). Wikipedia’s and NumPy’s/SciPy’s pages on the Cholesky factorization method vis-a-vis solving linear equations are useful sources for how it works.&lt;/p&gt;
+
+&lt;h2 id=&quot;solution-code&quot;&gt;Solution Code&lt;/h2&gt;
+
+&lt;p&gt;The Gauss-Seidel method and Gauss-Jordan methods are constructed in Python below. The Gauss-Seidel method, as it was coded in the previous post, could only solve 1D systems of equations, where only adjacent cells interacted with each other. However, the method can solve any system of equations where the coefficient matrix is symmetric-positive-definite. The Gauss-Seidel method code is updated to:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#New Gauss-Seidel Code
+
+def gauss_seidel(A,N,b,x0,tol):
+    # Gauss-Seidel: x0 is the initial solution
+    # No inverse matrix to return, just iteration states
+
+    ## Initialize
+    x = x0
+    dif = np.matmul(A,x)-b
+    res = np.array([LA.norm(dif)],dtype=float)
+    # tol = 1E-8
+    iter = 0
+    max_iter = 1E5
+    # print('&amp;gt; Gauss-Seidel Initial Residual: {}'.format(res[0]))
+    ## Iteration Loop
+    res_len = len(res)
+    while ((res[res_len-1] &amp;gt; tol) &amp;amp; (iter &amp;lt; max_iter)):
+        iter += 1
+        for i in range(0,N): # Loop through equations
+            x_sum = b[i]
+            for j in range(0,N): 
+                if (i != j): x_sum -= A[i,j]*x[j]
+            x[i] = x_sum/A[i,i]
+
+        if ((iter % 10) == 0):
+            dif = np.matmul(A,x)-b
+            res_iter = np.array(LA.norm(dif))
+            res = np.append(res,res_iter) # check this code
+            res_len = len(res)
+        # print('&amp;gt; Gauss-Seidel Residual at iter {}: {}'.format(iter,res_iter))
+
+    if (res[res_len-1] &amp;lt;= tol): 
+        print('&amp;gt;&amp;gt; Gauss-Seidel Converged at iteration',iter,\
+            '! tol =',tol,', res =',res[res_len-1])
+    else:
+        print('&amp;gt; Gauss-Seidel Divergence at iteration',iter,\
+            '! tol =',tol,', res =',res[res_len-1])
+    print_sol('Gauss-Seidel_Sol',A,A,x,np.matmul(A,x),N)
+
+    return x, res[res_len-1], iter
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;We can test it with a random symmetric-positive-definite coefficient matrix &lt;em&gt;A&lt;/em&gt; and random solution vector &lt;em&gt;x&lt;/em&gt;. Multiplying &lt;em&gt;A&lt;/em&gt; and &lt;em&gt;x&lt;/em&gt;, we get the constant vector &lt;em&gt;b&lt;/em&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;import numpy as np
+.
+.
+.
+def rand_SPD_Axb(N,gen_num):
+    # Random A, x, and corresponding generation for Ax = b problem
+    rng = np.random.default_rng(gen_num)
+    # A: symmetric positive definite
+    A_seed = rng.integers(low=-5, high=5, size=(N,N)).astype(np.float)
+    A_seed_T = np.transpose(A_seed)
+    A = (np.abs(A_seed) + np.abs(A_seed_T))*0.5
+    A += np.diag(np.ones(N)*N)
+    A_org = A
+    print('Determinant of A:',LA.det(A))
+    x = rng.integers(low=-N, high=N, size=N).astype(np.float)
+    b = np.matmul(A,x)
+    print_mat1('A_Org',A,N)
+    print_mat3('Original',A,np.eye(N),np.eye(N),b,N)
+    
+    return A, x, b
+.
+.
+.
+rng2 = np.random.default_rng()
+N = rng2.integers(6,14)
+gen_num = rng2.integers(10,100000)
+A, x, b = rand_SPD_Axb(N, gen_num)	
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;In the current case, the matrix &lt;em&gt;A&lt;/em&gt; and vector &lt;em&gt;b&lt;/em&gt; are:&lt;/p&gt;
+
+&lt;p align=&quot;center&quot;&gt;
+&lt;img src=&quot;https://latex.codecogs.com/svg.image?A&amp;space;=&amp;space;\begin{bmatrix}10&amp;space;&amp;space;&amp;amp;&amp;space;3&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;1.5&amp;space;&amp;amp;&amp;space;1.5&amp;space;&amp;amp;&amp;space;1.5&amp;space;&amp;amp;&amp;space;2.5&amp;space;\\3&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;9&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;3&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;1.5&amp;space;&amp;amp;&amp;space;2.5&amp;space;&amp;amp;&amp;space;4.5&amp;space;\\1.5&amp;space;&amp;amp;&amp;space;3&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;6&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;3&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;2&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;3&amp;space;&amp;space;&amp;space;\\1.5&amp;space;&amp;amp;&amp;space;1.5&amp;space;&amp;amp;&amp;space;3&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;7&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;3.5&amp;space;&amp;amp;&amp;space;3.5&amp;space;\\1.5&amp;space;&amp;amp;&amp;space;2.5&amp;space;&amp;amp;&amp;space;2&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;3.5&amp;space;&amp;amp;&amp;space;10&amp;space;&amp;space;&amp;amp;&amp;space;0.5&amp;space;\\2.5&amp;space;&amp;amp;&amp;space;4.5&amp;space;&amp;amp;&amp;space;3&amp;space;&amp;space;&amp;space;&amp;amp;&amp;space;3.5&amp;space;&amp;amp;&amp;space;0.5&amp;space;&amp;amp;&amp;space;10&amp;space;\end{bmatrix},\;\;&amp;space;b&amp;space;=&amp;space;\begin{bmatrix}-8.5&amp;space;\\30&amp;space;\\43.5&amp;space;\\35&amp;space;\\\11.5&amp;space;\\\61&amp;space;\end{bmatrix}&quot; title=&quot;A = \begin{bmatrix}10 &amp;amp; 3 &amp;amp; 1.5 &amp;amp; 1.5 &amp;amp; 1.5 &amp;amp; 2.5 \\3 &amp;amp; 9 &amp;amp; 3 &amp;amp; 1.5 &amp;amp; 2.5 &amp;amp; 4.5 \\1.5 &amp;amp; 3 &amp;amp; 6 &amp;amp; 3 &amp;amp; 2 &amp;amp; 3 \\1.5 &amp;amp; 1.5 &amp;amp; 3 &amp;amp; 7 &amp;amp; 3.5 &amp;amp; 3.5 \\1.5 &amp;amp; 2.5 &amp;amp; 2 &amp;amp; 3.5 &amp;amp; 10 &amp;amp; 0.5 \\2.5 &amp;amp; 4.5 &amp;amp; 3 &amp;amp; 3.5 &amp;amp; 0.5 &amp;amp; 10 \end{bmatrix},\;\; b = \begin{bmatrix}-8.5 \\30 \\43.5 \\35 \\\11.5 \\\61 \end{bmatrix}&quot; /&gt;
+&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;We then run the Gauss-Seidel method for the system and check the L2-norm of the residual vector _r =&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;Ax-b&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;_:&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; x
+array([-3.,  0.,  5.,  1.,  0.,  5.])
+&amp;gt;&amp;gt;&amp;gt; x_gs
+array([-3.00000000e+00,  1.35871561e-12,  5.00000000e+00,  1.00000000e+00,
+       -5.07416331e-13,  5.00000000e+00])
+&amp;gt;&amp;gt;&amp;gt; LA.norm(np.matmul(A,x_gs)-b) 
+2.465053629363389e-12
+&amp;gt;&amp;gt;&amp;gt; LA.norm(x_gs-x) 
+2.4648988254742506e-12
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The true and Gauss-Seidel numerical solutions look close, both by difference between the vectors and the L2-norm of hte difference between the solutions. Additionally, the residual is small enough where we can assume that the numerical solution has converged. We can check how the method is performs by looking at individual iterations:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;../../../assets/images/GS_Iter_Out.png&quot; alt=&quot;Gauss-Seidel Iterations&quot; title=&quot;Gauss-Seidel Iterations&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;In the line legend, the letters after &lt;em&gt;x&lt;/em&gt; are the iteration number. The solution, visually, is already very close after 10 iterations. In a real case, a closer solution can be reached by running the code longer, either by increasing the maximum number of iterations or lowering the tolerance (basically the residual required).&lt;/p&gt;
+
+&lt;h3 id=&quot;gauss-jordan&quot;&gt;Gauss-Jordan&lt;/h3&gt;
+
+&lt;p&gt;The Gauss-Jordan method is coded as:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# Gauss-Jordan Code
+
+def gauss_jordan(A,N,b):
+    # Custom Gauss-Jordan Elimination Algo
+
+    # Notes from 9/11-13 2021 (Math folder)
+    A_org = np.copy(A) # Original A (need for tests)
+    b_org = np.copy(b)
+    A_inv = np.eye(N) # A inverse initialized as identity matrix
+    P_gen = np.eye(N) # General Permutation matrix
+    P = np.eye(N) # Permutation matrix for this column pivot
+    # Reduce to upper tridiagonal coefficient matrix
+    for i in range(0, N-1):
+        # Find row of pivot element in column i
+        i_max = i
+        for j in range(i+1,N):
+          if (abs(A[i_max,i]) &amp;lt; abs(A[j,i])): i_max = j
+        if (A[i_max,i] &amp;lt; 0.0):
+            A[i_max,0:] = A[i_max,0:]*-1.0 # Switch signs
+            A_inv[i_max,0:] = A_inv[i_max,0:]*-1.0
+            b[i_max] = b[i_max]*-1.0
+        # Move pivot row so column is on diagonal
+        if (i_max != i): # Swap rows
+            P[i_max, i_max] = 0.0
+            P[i, i] = 0.0
+            P[i_max, i] = 1.0 # Move row i to row i_max
+            P[i, i_max] = 1.0 # Move row i_max to row i
+            A = np.matmul(P,A)
+            A_inv = np.matmul(P,A_inv) 
+            b = np.matmul(P,b)
+            P_gen = np.matmul(P, P_gen) # !compt. intensive!
+        # Pivot
+        fac = A[i,i]
+        b[i] = b[i]/fac # A[i,i] is now pivot element
+        A_inv[i,0:] = A_inv[i,0:]/fac
+        A[i,0:] = A[i,0:]/fac # pivot element becomes 1
+        for j in range(i+1,N): # Other rows
+            if  (A[j,i] != 0.0): # skip rows with column element = 0
+                fac = A[j,i] # factor for multiplying pivot row
+                A[j,0:] -= fac*A[i,0:]
+                A_inv[j,0:] -= fac*A_inv[i,0:]
+                b[j] -= fac*b[i]
+    if (A[N-1,N-1] != 0.0):
+        fac = A[N-1,N-1]
+        b[N-1] = b[N-1]/fac # last row
+        A_inv[N-1,0:] = A_inv[N-1,0:]/fac
+        A[N-1,0:] = A[N-1,0:]/fac
+    elif (b[N-1] != 0.0): # No solution here
+        raise Exception('Singular matrix: 0*x_N != 0.0')
+    
+    # Check: Matrix is in upper tridiagonal form
+    if (LA.norm(A-np.triu(A)) &amp;lt;= 1.0E-14):
+        print('&amp;gt;&amp;gt; A reduced to upper tridiagonal matrix! &amp;lt;&amp;lt;')
+    else: 
+        print('&amp;gt; Partial Reduction Failed!')
+        return b, A
+    
+    # Back sub for trailing terms (full pivoting)
+    for i in range(N-1,0,-1): # Start: bottom row cancels out other rows
+        for j in range(i-1,-1,-1): # Other rows
+            if (A[j,i] != 0.0):
+                fac = A[j,i]
+                A[j,0:] -= fac*A[i,0:]
+                A_inv[j,0:] -= fac*A_inv[i,0:]
+                b[j] -= fac*b[i]
+    
+    # Revert solutions back to original order
+    P_trans = np.transpose(P)
+    A_inv_perm = np.matmul(P_trans,A_inv)
+   
+    # Solution Test: norm(x - (A_inv x b)) &amp;lt; some precision number
+    l2_res = LA.norm(b-np.matmul(A_inv,b_org))
+
+    # Check: Full pivoting has turned A into identity matrix
+    if (LA.norm(A-np.eye(N))&amp;lt;1.0E-14): 
+        return b, A_inv
+    else:
+        print('&amp;gt; Full Pivoting Failed!')
+        return b, A
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;So we run it and check results and residual:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; x
+array([-3.,  0.,  5.,  1.,  0.,  5.])
+&amp;gt;&amp;gt;&amp;gt; x_gj
+array([-3.00000000e+00, -4.44089210e-16,  5.00000000e+00,  1.00000000e+00,
+       -2.22044605e-16,  5.00000000e+00])
+&amp;gt;&amp;gt;&amp;gt; LA.norm(np.matmul(A,x_gj)-b)  
+0.0
+&amp;gt;&amp;gt;&amp;gt; LA.norm(x_gj-x)                    
+1.4895204919483639e-15
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;table&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;The Gauss-Jordan residual is zero and the L2-norm of the error vector, _&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;x&lt;sub&gt;gj&lt;sub&gt;&lt;/sub&gt;&lt;/sub&gt;&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;_ is on the order of &lt;em&gt;1E-15&lt;/em&gt;, which is orders of magnitude smaller than the Gauss-Seidel method. While the residuals are different, the solutions will appear to overlap.  For the purposes of this test, they are close enough. However, for a transient study, where a series of solutions will be stacked on top of each other, this residuals become important as the errors will accumulate.&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;So far, we’ve coded the schemes explicitly, which forces us to understand the schemes but also allows us to report more data from the solver, for example, how the solver behaves at intermediate solutions. This can be invaluable if we’re not sure whether our understanding of the problem is accurate. However, once we’re sure that we understand the mathematical problem and that the coefficient matrix is correct, we can use solvers already in the Python/NumPy/SciPy libraries to get the solution. The advantages, beyond not having to debug our own code, are the optimizations that the package’s developers have implemented. Though not having to debug is a huge advantage when solving small toy problems, the optimizations can be crucial when dealing with multi-billion calculation problems.&lt;/p&gt;
+
+&lt;p&gt;We call the conjugate gradient method from Sparse Linear Algebra toolbox from SciPy and the Cholesky factorization method from SciPy’s Linear Algebra toolbox as:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;import scipy.sparse.linalg as SLA
+from scipy.linalg import cho_factor, cho_solve
+.
+.
+.
+
+[x_cg, info_cg] = cg(A, b)    
+c_cho, low = cho_factor(A)
+x_cho = cho_solve((c_cho, low), b)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The results for the conjugate gradient method are:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; x_cg
+array([-3.00000000e+00, -4.44089210e-16,  5.00000000e+00,  1.00000000e+00,
+       -2.22044605e-16,  5.00000000e+00])
+&amp;gt;&amp;gt;&amp;gt; LA.norm(np.matmul(A,x_cg)-b)
+0.0
+&amp;gt;&amp;gt;&amp;gt; LA.norm(x_cg-x)              
+1.4895204919483639e-15
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;and, for the Cholesky factorization:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; x_cho
+array([-3.00000000e+00, -4.44089210e-16,  5.00000000e+00,  1.00000000e+00,
+       -2.22044605e-16,  5.00000000e+00])
+&amp;gt;&amp;gt;&amp;gt; LA.norm(np.matmul(A,x_cho)-b)
+0.0
+&amp;gt;&amp;gt;&amp;gt; LA.norm(x_cho-x)              
+1.4895204919483639e-15
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The results show about the same accuracy as the Gauss-Jordan method we coded, but without the having to code.&lt;/p&gt;
+
+&lt;h2 id=&quot;apply-to-darcys-law&quot;&gt;Apply to Darcy's Law&lt;/h2&gt;
+
+&lt;p&gt;Now that we know our four methods work on the general class of problems (symmetric-positive-definite coefficient matrix), we can now apply them to our specific problem and see which one works best. We set up the terms for the pressures in the &lt;a href=&quot;https://tim-munuhe.github.io/2021/06/07/solve-1d-darcy-continuity&quot;&gt;previous post&lt;/a&gt;. This post will leave it to the reader to put the right terms for the pressure equations from the previous post into the coefficient matrix at the beginning of this post. Just know, the problem has not changed, just the form. The python code may also be deciphered for clues as to the terms.&lt;/p&gt;
+
+&lt;p&gt;We call methods on the coefficient matrices and constant vectors:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;import multi_solv_v3 as ms
+import darcy_v1 as dc
+import scipy.sparse.linalg as SLA
+from scipy.linalg import cho_factor, cho_solve
+import csv
+import numpy as np
+from numpy import linalg as LA
+import copy
+import time
+
+# Read Case
+with open('casefile_mesh.csv',newline='') as casefile:  # open and read case params
+    casereader = csv.DictReader(casefile) 
+    i = 0 
+    caselist = {} 
+    for row in casereader:    
+        caselist[i] = row 
+        i += 1         
+
+for i in range(0,len(caselist)):
+      # Create case object and check values of variables
+      case_current = dc.case_param(caselist[i])
+      print(case_current.x0)
+      print(case_current.dx)
+
+      # Initialize and check mesh object creation ##
+      case_mesh = dc.mesh(case_current) # create case mesh from case parameters
+      Nx = case_mesh.Nx
+      print('Node Locations w/ inlet:', case_mesh.x[0:5]) # check inlet location and spacing
+      print('Nx:', case_mesh.Nx) # check number of elements
+      print('Outlet Location:', case_mesh.x[case_mesh.Nx-1])
+      print('Face Locations:', case_mesh.xc[0:5]) # 
+
+      # Create fluid and porous medium objects for this specific case ##
+      fl1 = dc.fluid(case_mesh,case_current.fl) # fluid object, determined by mesh and case's fluid properties
+      pm1 = dc.por_med(case_mesh,case_current.pm) # porous medium object, determined by mesh and case's porous medium properties
+
+      # Linear P
+      print('Original P:',fl1.p[0:4],fl1.p[case_mesh.Nx-5:case_mesh.Nx-1])
+      fl1.p_lin(case_mesh)
+      print('Linear P:',fl1.p[0:4],fl1.p[case_mesh.Nx-5:case_mesh.Nx-1])
+
+      # Darcy Velocity
+      print('Original u:',fl1.u[0:4]) # velocity from initialization
+      fl1.u = np.zeros(case_mesh.Nx) # zero out velocity 
+      fl1.darcyv(case_mesh,pm1) # use darcyv method
+      print('Darcy u:',fl1.u[0:4]) # print to confirm that darcyv did what it was supposed to (got same solution as initialization)
+
+      ## Pressure calculation using Different Solvers
+
+      # Gauss-Seidel Original
+      fl_gso = dc.fluid(case_mesh,case_current.fl)
+      print('Original P:',fl_gso.p[0:4],
+            fl_gso.p[Nx-5:Nx-1])
+      A,b = fl_gso.coeff_Ab(case_mesh,pm1)
+      time_gso = time.perf_counter()
+      [iter_gso, res_gso] = fl_gso.gauss_seidel(case_mesh,pm1,1.0E-9)
+      time_gso -= time.perf_counter()
+      time_gso = abs(time_gso)
+      fl_gso.darcyv(case_mesh,pm1)
+
+      # Gauss-Seidel
+      fl_gs = dc.fluid(case_mesh,case_current.fl)
+      # print('Original P:',fl_gs.p[0:4],
+      #       fl_gs.p[Nx-5:Nx-1])
+      A,b = fl_gs.coeff_Ab(case_mesh,pm1)
+      time_gs = time.perf_counter()
+      fl_gs.p, res_gs, iter_gs = ms.gauss_seidel(A,Nx,b,np.zeros(Nx),1.0E-9)
+      time_gs -= time.perf_counter()
+      time_gs = abs(time_gs)
+      fl_gs.darcyv(case_mesh,pm1)
+
+      # Gauss-Jordan
+      fl_gj = dc.fluid(case_mesh,case_current.fl)
+      time_gj = time.perf_counter()
+      fl_gj.p, res_gj = ms.gauss_jordan(A,Nx,b)
+      time_gj -= time.perf_counter()
+      time_gj = abs(time_gj)
+      fl_gj.darcyv(case_mesh,pm1)
+
+      # Conjugate Gradient
+      fl_cg = dc.fluid(case_mesh,case_current.fl)
+      time_cg = time.perf_counter()
+      fl_cg.p, info_cg = SLA.cg(A, b, tol=1.0E-9)
+      time_cg -= time.perf_counter()
+      time_cg = abs(time_cg)
+      fl_cg.darcyv(case_mesh,pm1) 
+
+      # Conjugate Gradient Squared
+      fl_cgs = dc.fluid(case_mesh,case_current.fl)
+      time_cgs = time.perf_counter()
+      fl_cgs.p, info_cg = SLA.cgs(A, b, tol=1.0E-9)
+      time_cgs -= time.perf_counter()
+      time_cgs = abs(time_cgs)
+      fl_cgs.darcyv(case_mesh,pm1) 
+
+      # Cholesky Factorization
+      fl_cho = dc.fluid(case_mesh,case_current.fl)
+      time_cho = time.perf_counter()
+      c_cho, low = cho_factor(A)
+      fl_cho.p = cho_solve((c_cho, low), b)
+      time_cho -= time.perf_counter()
+      time_cho = abs(time_cho)
+      fl_cho.darcyv(case_mesh,pm1)
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The L2-norms of the error vectors show how poor the Gauss-Seidel method compares against the other methods:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;gt;&amp;gt;&amp;gt; LA.norm(fl_gs.p-fl1.p)
+0.01010884570852091
+&amp;gt;&amp;gt;&amp;gt; LA.norm(fl_gj.p-fl1.p)  
+5.312732304408523e-12
+&amp;gt;&amp;gt;&amp;gt; LA.norm(fl_cg.p-fl1.p)  
+5.312732304408523e-12
+&amp;gt;&amp;gt;&amp;gt; LA.norm(fl_cho.p-fl1.p)  
+5.312732304408523e-12
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Apart from the Gauss-Seidel method, the methods have reasonably close residuals. What does this look like with regards to the pressure fields?&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;../../../assets/images/p_N100.png&quot; alt=&quot;P vs. x for different methods.&quot; title=&quot;P vs. x for different methods.&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;They virtually overlap, despite the large difference in the error norms. So, apart from the error norm, how else would we distinguish the methods? Since our case is relatively simple, we can use two basic criteria: timing and memory usage. Both are important for very large problems, for example if we broke the domain into millions of node elements. In comparison, the tests we did earlier with the random symmetric-positive-definite coefficient matrix only used 6 elements. For this post, only time will be considered:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Timing (s): G-Seidel | G-Jordan | Conj. Grad | Cholesky
+----------------------------------------------------------------
+79.4208762 | 0.0295643 | 0.0014511 | 0.0019525
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;With &lt;em&gt;100&lt;/em&gt; elements, it takes over a minute for the Gauss-Seidel method while the other methods take less than one second.&lt;/p&gt;
+
+&lt;p&gt;So why would we use the Gauss-Seidel method? Using the method as coded in the previous post, with the equations coded directly (center, upstream, and downstream terms  rather than put into &lt;em&gt;Ax = b&lt;/em&gt; form, the only values kept in memory were the pressure vector, permeability, and viscosity, a total of &lt;em&gt;3N&lt;/em&gt; terms. The other methods have a minimum of &lt;em&gt;N&lt;sup&gt;2&lt;/sup&gt;&lt;/em&gt; values (assuming sparse matrices aren’t used). In the case that the domain is divided into millions of elements, it may only be possible to use the Gauss-Seidel method to solve the problem on a personal computer.&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>Basic Python with Darcy's Law - Solving Darcy's Law and Continuity Equation on 1D Mesh</title>
@@ -117,7 +635,7 @@ do while ((res&amp;gt;tol)&amp;amp;&amp;amp;(k&amp;lt;max_iter))
 end do
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;We first define the solver parameters: tol and max_iter define how soon the iteration loop terminates, depending either on convergence (tol) or a maximum iteration count. res and k represents how the scheme is doing and whichever reaches its limit sooner terminates the loop. Then, we initialize the middle mesh points’ solution. Since we have pressure boundaries, p[0] and p[N-1] are already solved. Since we do not know how many iterations it will take to get a converged pressure, we use a while loop as the outer loop with the residual as the main escape condition. The iteration count is insurance so the program doesn’t hang here.&lt;/p&gt;
+&lt;p&gt;We first define the solver parameters: tol and max_iter define how soon the iteration loop terminates, depending either on convergence (tol) or a maximum iteration count. res and k represents how the scheme is doing and whichever reaches its limit sooner terminates the loop. Then, we initialize the middle mesh points’ solution. Since we have pressure boundaries, p[0] and p[N-1] are already solved. Since we do not know how many iterations it will take to get a converged pressure, we use a while loop as the outer loop with the residual (defined here as the L2-norm of the change in the pressure vector per iteration) as the main escape condition. The iteration count is insurance so the program doesn’t hang here.&lt;/p&gt;
 
 &lt;p&gt;Inside the loop, the Gauss-Seidel method allows the use of the next iteration’s solution (p[i+1], p[i-1]) so the equations are are continually changing based on new data. There is another simple iterative method called the Jacobi method where the previous iteration’s solution (p_prev in the pseudocode) is used to calculate the next iteration. The difference then becomes convergence speed, where Gauss-Seidel is generally faster.&lt;/p&gt;
 

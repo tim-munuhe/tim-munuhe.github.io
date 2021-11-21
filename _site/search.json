@@ -2,6 +2,17 @@
   
     {
 
+      "title"    : "Basic Python with Darcy&#39;s Law - Algorithms to Solve System of Linear Equations",
+      "url"      : "/2021/11/21/apply-solvers",
+      "category" : "",
+      "tags"     : "",
+      "date"     : "2021-11-21 00:00:00 -0500",
+      "description" : "Implement algorithms to solve system of linear equations created from Darcy\&#39;s Law and Continuity Equation"
+
+    } ,
+  
+    {
+
       "title"    : "Basic Python with Darcy&#39;s Law - Solving Darcy&#39;s Law and Continuity Equation on 1D Mesh",
       "url"      : "/2021/06/07/solve-1d-darcy-continuity",
       "category" : "",

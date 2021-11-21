@@ -1,4 +1,4 @@
-I"�I<p>While the code we've developed so far allows us to go from parameters to plots in a few lines (assuming that all the classes and their methods are coded), the code also makes the assumption that the pressure is linear, which may not be true. To add more functionality to the code, let's figure out how to solve for the pressure distribution and velocity given only the parameters of the porous medium and the inlet and outlet conditions.</p>
+I"6J<p>While the code we've developed so far allows us to go from parameters to plots in a few lines (assuming that all the classes and their methods are coded), the code also makes the assumption that the pressure is linear, which may not be true. To add more functionality to the code, let's figure out how to solve for the pressure distribution and velocity given only the parameters of the porous medium and the inlet and outlet conditions.</p>
 
 <h3 id="math">Math</h3>
 
@@ -98,7 +98,7 @@ do while ((res&gt;tol)&amp;&amp;(k&lt;max_iter))
 end do
 </code></pre></div></div>
 
-<p>We first define the solver parameters: tol and max_iter define how soon the iteration loop terminates, depending either on convergence (tol) or a maximum iteration count. res and k represents how the scheme is doing and whichever reaches its limit sooner terminates the loop. Then, we initialize the middle mesh points’ solution. Since we have pressure boundaries, p[0] and p[N-1] are already solved. Since we do not know how many iterations it will take to get a converged pressure, we use a while loop as the outer loop with the residual as the main escape condition. The iteration count is insurance so the program doesn’t hang here.</p>
+<p>We first define the solver parameters: tol and max_iter define how soon the iteration loop terminates, depending either on convergence (tol) or a maximum iteration count. res and k represents how the scheme is doing and whichever reaches its limit sooner terminates the loop. Then, we initialize the middle mesh points’ solution. Since we have pressure boundaries, p[0] and p[N-1] are already solved. Since we do not know how many iterations it will take to get a converged pressure, we use a while loop as the outer loop with the residual (defined here as the L2-norm of the change in the pressure vector per iteration) as the main escape condition. The iteration count is insurance so the program doesn’t hang here.</p>
 
 <p>Inside the loop, the Gauss-Seidel method allows the use of the next iteration’s solution (p[i+1], p[i-1]) so the equations are are continually changing based on new data. There is another simple iterative method called the Jacobi method where the previous iteration’s solution (p_prev in the pseudocode) is used to calculate the next iteration. The difference then becomes convergence speed, where Gauss-Seidel is generally faster.</p>
 
@@ -242,6 +242,8 @@ print('Final P:',fl_gs_mulin.p[0:4],
 <p><img src="../../../assets/images/face_conv_u.png" alt="converged u for GS and linear viscosity." title="u vs. x." /></p>
 
 <p>In the next blog post, we'll use more efficient extant tools to solve this problem.</p>
+
+<h4 id="footnotes">Footnotes</h4>
 
 <div class="footnotes" role="doc-endnotes">
   <ol>
